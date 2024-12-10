@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
+import {
+  useAuthStore,
+  useIsLoadingStore,
+  useIsSidebarOpenStore,
+} from "~/store/auth.store";
 import { v4 as uuid } from "uuid";
 import { useSeoMeta, useRouter, ref, watch } from "#imports"; // Ensure to import these as needed
 import { account } from "~/lib/appwrite";
@@ -8,6 +12,7 @@ useSeoMeta({
   title: "Login",
 });
 
+const isSidebarOpen = useIsSidebarOpenStore();
 const emailRef = ref("");
 const passwordRef = ref("");
 const nameRef = ref("");
@@ -29,6 +34,7 @@ const login = async () => {
         status: true,
         name: response.name,
       });
+      isSidebarOpen.set(true);
       await router.push("/");
     }
   } catch (error) {
@@ -48,7 +54,8 @@ const register = async () => {
       passwordRef.value, // Password as the third argument
       nameRef.value // Name as the optional fourth argument
     );
-    await login(); // Log in automatically after registration
+    await login();
+    isSidebarOpen.set(true); // Log in automatically after registration
   } catch (error) {
     console.error("Registration error:", error); // Handle error appropriately
   } finally {
@@ -57,15 +64,15 @@ const register = async () => {
 };
 
 // Watcher for debugging email input (optional)
-watch(emailRef, () => {
-  console.log(emailRef.value);
+watch(isSidebarOpen, () => {
+  console.log("isSidebarOpen:", isSidebarOpen);
 });
 </script>
 
 <template>
   <div class="p-10 flex justify-center items-center min-h-screen w-full">
     <div class="rounded bg-gray-900 w-1/4 p-5">
-      <h1 class="text-2xl font-bold text-center mb-5">Login</h1>
+      <h1 class="text-2xl font-bold text-center mb-5 text-gray-100">Login</h1>
       <form>
         <UiInput
           v-model="emailRef"

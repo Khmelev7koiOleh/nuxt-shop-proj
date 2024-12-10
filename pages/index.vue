@@ -132,8 +132,13 @@ onMounted(() => {
   </div>
 
   <div class="text-2xl test-light text-gray-800 p-10">Today's best</div>
-  <div class="max-w-[95%] mx-auto">
+
+  <div class="max-w-[95%] mx-auto relative">
     <Carousel>
+      <div class="absolute top-0 right-20">
+        <CarouselPrevious />
+        <CarouselNext />
+      </div>
       <CarouselContent>
         <CarouselItem
           v-for="order in orders"
@@ -147,10 +152,6 @@ onMounted(() => {
           </div>
         </CarouselItem>
       </CarouselContent>
-      <div class="absolute top-0 right-20">
-        <CarouselPrevious />
-        <CarouselNext />
-      </div>
     </Carousel>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { ref } from "vue";
 interface IAuthStore {
   email: string;
   status: boolean;
@@ -11,8 +12,10 @@ const defaultValues: { user: IAuthStore } = {
     name: "",
   },
 };
+
 export const useAuthStore = defineStore("auth", {
   state: () => defaultValues,
+
   getters: {
     isAuth: (state) => state.user.status,
   },
@@ -37,5 +40,25 @@ export const useIsLoadingStore = defineStore("isLoading", {
     set(data: boolean) {
       this.$patch({ isLoading: data });
     },
+  },
+});
+
+export const useIsSidebarOpenStore = defineStore("isSidebarOpen", {
+  state: () => ({
+    isSidebarOpen: false,
+  }),
+  actions: {
+    // Set the sidebar open state (true or false)
+    set(data: boolean) {
+      this.$patch({ isSidebarOpen: data });
+    },
+    // Toggle the sidebar state
+    toggle() {
+      this.isSidebarOpen = !this.isSidebarOpen;
+    },
+  },
+  getters: {
+    // Getter to check if the sidebar is open
+    isOpen: (state) => state.isSidebarOpen,
   },
 });
