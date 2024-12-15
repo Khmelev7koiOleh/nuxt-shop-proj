@@ -21,7 +21,6 @@ const ifUser = async () => {
     } else {
       isSidebarOpen.set(true);
     }
-    console.log(response); // User is logged in
   } catch (error) {
     console.error("User not logged in", error);
     isSidebarOpen.set(false);
@@ -37,22 +36,20 @@ const logout = () => {
 
 onMounted(() => {
   ifUser();
-
-  console.log(isSidebarOpen.isOpen);
 });
 </script>
 
 <template>
   <section
-    class="bg-slate-700 text-gray-100 text-xl h-screen flex flex-col p-8 justify-center gap-10"
+    class="bg-slate-700 text-gray-100 text-xl h-screen flex flex-col justify-center gap-4"
   >
     <div class="mt-10"></div>
-    <div v-for="item in MENU_DATA" :key="item.name" class="">
+    <div v-for="item in MENU_DATA" :key="item.name">
       <LayoutMenu :item="item" />
     </div>
 
     <div
-      class="flex gap-2 h-full items-end justify-end cursor-pointer"
+      class="flex gap-2 h-full items-end justify-end cursor-pointer p-2"
       @click="logout"
     >
       <div>Logout</div>

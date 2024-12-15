@@ -2,7 +2,7 @@
   <div>
     <NuxtLink
       :to="item.url"
-      class="flex items-center gap-4 rounded-md hover:bg-accent hover:text-gray-400 cursor-pointer"
+      class="w-[100%] flex items-center gap-2 p-3 rounded-md hover:bg-accent hover:text-gray-400 cursor-pointer"
     >
       <Icon :name="item.icon" />
       <div>{{ item.name }}</div>

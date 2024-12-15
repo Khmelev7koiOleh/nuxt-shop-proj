@@ -28,7 +28,7 @@ const getItems = async () => {
     } else {
       orders.value = response.documents.map((document) => ({
         $id: document.$id,
-        title: document.title,
+        name: document.title,
         $createdAt: document.$createdAt,
         image: document.image,
       })) as IOrder[];
@@ -69,7 +69,7 @@ onMounted(() => {
         >
           <div>
             <img :src="order.image" alt="Order image" />
-            <p>{{ order.title }}</p>
+            <p>{{ order.name }}</p>
           </div>
         </CarouselItem>
       </CarouselContent>

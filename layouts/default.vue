@@ -15,7 +15,6 @@ const ifUser = async () => {
     } else {
       isSidebarOpen.set(true);
     }
-    console.log(response); // User is logged in
   } catch (error) {
     console.error("User not logged in", error);
     isSidebarOpen.set(false);

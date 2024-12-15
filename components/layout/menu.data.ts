@@ -16,10 +16,20 @@ export const MENU_DATA: IMenuItem[] = [
     url: "/products",
   },
   {
-    icon: "ph:contactless-payment",
-    name: "Payments",
-    url: "/payments",
+    icon: "fluent:heart-28-regular",
+    name: "Favorites",
+    url: "/favorites",
   },
+  {
+    icon: "ion:cart-outline",
+    name: "Cart",
+    url: "/cart",
+  },
+  // {
+  //   icon: "ph:contactless-payment",
+  //   name: "Payments",
+  //   url: "/payments",
+  // },
 
   {
     icon: "fluent:receipt-28-regular",
