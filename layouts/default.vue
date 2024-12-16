@@ -3,8 +3,13 @@ console.log("default layout");
 import { onMounted, watch } from "vue";
 import { useIsSidebarOpenStore } from "~/store/auth.store";
 import { account } from "~/lib/appwrite";
+import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
+import { useRouter } from "vue-router";
 
 const isSidebarOpen = useIsSidebarOpenStore();
+const isLoadingStore = useIsLoadingStore();
+const store = useAuthStore();
+const router = useRouter();
 const ifUser = async () => {
   try {
     const response = await account.get(); // Get current user
@@ -22,6 +27,18 @@ const ifUser = async () => {
 };
 watch(isSidebarOpen, async () => {
   await ifUser();
+});
+
+onMounted(async () => {
+  try {
+    const user = await account.get();
+    if (user) store.set(user);
+  } catch (error) {
+    console.error("Error:", error);
+    router.push("/login");
+  } finally {
+    isLoadingStore.set(false);
+  }
 });
 </script>
 
