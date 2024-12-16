@@ -43,7 +43,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="isSidebarOpen.isOpen">
+  <div v-if="store.isAuth">
     <!-- <LayoutLoader v-if="loadingStore.isLoading" /> -->
     <section class="w-screen min-h-[100vh] flex">
       <div class="w-[15%]">
@@ -58,7 +58,7 @@ onMounted(async () => {
     </section>
   </div>
 
-  <div v-if="!isSidebarOpen.isOpen">
+  <div v-if="!store.isAuth">
     <!-- <LayoutLoader v-if="loadingStore.isLoading" /> -->
     <section class="w-screen min-h-[100vh] flex">
       <div class="w-full">
