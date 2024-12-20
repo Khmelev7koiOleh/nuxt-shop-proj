@@ -26,11 +26,9 @@ import {
 // store
 const cDStore = useFavoritesStore();
 // Input references and error handling
-const nameRef = ref("");
-const priceRef = ref(0);
-const fileRef = ref<File | null>(null);
+
 const errorMessage = ref<string | null>(null);
-const isLoading = ref(false);
+
 const meals = ref<IMeals[]>([]);
 const favorites = ref<IMeals[]>([]);
 const carts = ref<IMeals[]>([]);
@@ -172,72 +170,6 @@ const makeCart = async (meal: IMeals) => {
 };
 
 // Handle file change
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files.length > 0) {
-    fileRef.value = target.files[0];
-  } else {
-    fileRef.value = null;
-  }
-};
-
-// Reset form
-const resetForm = () => {
-  nameRef.value = "";
-  fileRef.value = null;
-  isLoading.value = false;
-  errorMessage.value = null;
-};
-
-// Upload image
-const uploadImage = async () => {
-  if (!fileRef.value) {
-    errorMessage.value = "No file selected.";
-    return null;
-  }
-
-  try {
-    const file = await storage.createFile(STORAGE_ID, uuid(), fileRef.value);
-    return file;
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    errorMessage.value = "File upload failed.";
-    return null;
-  }
-};
-
-// Use form with validation
-const { handleSubmit } = useForm<IMeals>();
-const mutation = useMutation({
-  mutationKey: ["meals", nameRef.value],
-  mutationFn: async () => {
-    const uploadedFile = await uploadImage();
-    if (!uploadedFile) throw new Error("File upload failed.");
-
-    const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
-    return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
-      name: nameRef.value,
-      price: priceRef.value,
-      image: imageURL,
-      $createdAt: new Date().toISOString(),
-    });
-  },
-  onSuccess: () => {
-    console.log("Meal created successfully.");
-    resetForm();
-    getItems(); // Refresh meals
-  },
-  onError: (error) => {
-    console.error("Error creating meal:", error);
-    errorMessage.value = "Meal creation failed.";
-  },
-});
-
-// Form submission
-const onSubmit = handleSubmit(() => {
-  isLoading.value = true;
-  mutation.mutate();
-});
 
 // Initial loading of data
 onMounted(() => {
@@ -248,14 +180,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-slate-500 mb-20 flex flex-col gap-2 w-1/2">
-    <input type="text" v-model="nameRef" placeholder="Title" />
-    <input type="number" v-model="priceRef" placeholder="Price" />
-    <input type="file" @change="handleFileChange" />
-    <button @click="onSubmit" type="submit">Submit</button>
-    <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
-  </div>
-
   <div class="text-2xl test-light text-gray-800 p-10">Today's best</div>
 
   <div class="max-w-[95%] mx-auto relative">
@@ -278,7 +202,7 @@ onMounted(() => {
             </div>
             <img :src="meal.image" alt="Meal image" />
 
-            <div class="flex gap-4 p-2">
+            <div class="flex gap-4">
               <button
                 @click="makeFavorite(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"

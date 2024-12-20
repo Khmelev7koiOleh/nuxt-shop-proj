@@ -22,6 +22,7 @@
     "appwrite": "^16.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
     "embla-carousel-vue": "^8.5.1",
     "nuxt": "^3.14.1592",
     "pinia": "^2.3.0",

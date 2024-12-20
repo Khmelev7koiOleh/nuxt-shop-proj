@@ -1,38 +1,63 @@
+<template>
+  <LayoutLoader v-if="isLoadingStore.isLoading" />
+  <section class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar for medium and larger screens -->
+    <aside
+      v-if="store.isAuth"
+      class="md:block fixed top-0 left-0 z-10 w-[70px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
+    >
+      <LayoutSidebar />
+
+      <button
+        @click="logout"
+        class="absolute bottom-4 right-0 w-full flex items-center justify-center gap-2 text-white text-xl hover:text-gray-500 transition duration-300"
+      >
+        <div>Logout</div>
+        <Icon name="line-md:logout" size="25" />
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <div :class="[{ 'md:ml-[200px] ml-[40px]': store.isAuth }, 'flex-1 p-4']">
+      <slot />
+    </div>
+  </section>
+</template>
+
 <script setup lang="ts">
-console.log("default layout");
-import { onMounted, watch } from "vue";
-import { useIsSidebarOpenStore } from "~/store/auth.store";
 import { account } from "~/lib/appwrite";
 import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
+import { watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
-const isSidebarOpen = useIsSidebarOpenStore();
 const isLoadingStore = useIsLoadingStore();
 const store = useAuthStore();
 const router = useRouter();
-const ifUser = async () => {
-  try {
-    const response = await account.get(); // Get current user
 
-    if (!response) {
-      isSidebarOpen.set(false);
-      return;
-    } else {
-      isSidebarOpen.set(true);
-    }
-  } catch (error) {
-    console.error("User not logged in", error);
-    isSidebarOpen.set(false);
-  }
+const logout = () => {
+  account.deleteSession("current");
+  store.set({ email: "", name: "", status: false });
+  router.push("/login");
 };
-watch(isSidebarOpen, async () => {
-  await ifUser();
-});
+
+// Watch the authentication state
+watch(
+  () => store.isAuth,
+  (isAuth) => {
+    if (!isAuth) {
+      console.log("User logged out. Hiding sidebar...");
+    } else {
+      console.log("User logged in. Showing sidebar...");
+    }
+  }
+);
 
 onMounted(async () => {
   try {
     const user = await account.get();
-    if (user) store.set(user);
+    if (user) {
+      store.set({ email: user.email, name: user.name, status: true });
+    }
   } catch (error) {
     console.error("Error:", error);
     router.push("/login");
@@ -41,31 +66,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<template>
-  <div v-if="store.isAuth">
-    <!-- <LayoutLoader v-if="loadingStore.isLoading" /> -->
-    <section class="w-screen min-h-[100vh] flex">
-      <div class="w-[15%]">
-        <div class="fixed w-[15%]">
-          <LayoutSidebar />
-        </div>
-      </div>
-
-      <div class="w-[85%]">
-        <slot />
-      </div>
-    </section>
-  </div>
-
-  <div v-if="!store.isAuth">
-    <!-- <LayoutLoader v-if="loadingStore.isLoading" /> -->
-    <section class="w-screen min-h-[100vh] flex">
-      <div class="w-full">
-        <slot />
-      </div>
-    </section>
-  </div>
-</template>
-
-<style scoped></style>

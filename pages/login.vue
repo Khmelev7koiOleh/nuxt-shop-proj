@@ -78,18 +78,18 @@ watch(isSidebarOpen, () => {
           v-model="emailRef"
           placeholder="Email"
           type="email"
-          class="mb-4"
+          class="mb-4 placeholder:text-gray-300 text-white"
         />
         <UiInput
           v-model="passwordRef"
           placeholder="Password"
           type="password"
-          class="mb-4"
+          class="mb-4 placeholder:text-gray-300 text-white"
         />
         <UiInput
           v-model="nameRef"
           placeholder="Name"
-          type="text"
+          type="text placeholder:text-gray-300  text-white"
           class="mb-4"
         />
         <div class="flex justify-center items-center gap-5">

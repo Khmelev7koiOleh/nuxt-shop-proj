@@ -27,13 +27,6 @@ const ifUser = async () => {
   }
 };
 
-const logout = () => {
-  account.deleteSession("current");
-  isSidebarOpen.set(false);
-  router.push("/login");
-  console.log(isSidebarOpen);
-};
-
 onMounted(() => {
   ifUser();
 });
@@ -47,14 +40,7 @@ onMounted(() => {
     <div v-for="item in MENU_DATA" :key="item.name">
       <LayoutMenu :item="item" />
     </div>
-
-    <div
-      class="flex gap-2 h-full items-end justify-end cursor-pointer p-2"
-      @click="logout"
-    >
-      <div>Logout</div>
-      <Icon name="line-md:logout" size="25" />
-    </div>
+    <div class="py-10"></div>
   </section>
 </template>
 

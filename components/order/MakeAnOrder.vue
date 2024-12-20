@@ -9,7 +9,7 @@ import {
   COLLECTION_ORDERS,
   STORAGE_ID,
 } from "@/app.constants";
-import { DB, storage } from "@/lib/appwrite";
+import { account, DB, storage } from "@/lib/appwrite";
 import { useMutation } from "@tanstack/vue-query";
 import { v4 as uuid } from "uuid";
 import { useForm } from "vee-validate";
@@ -45,9 +45,18 @@ const carts = ref<IMeals[]>([]);
 const total = ref(0);
 const onOrderSuccess = ref(false);
 const favoriteMap = ref<{ [mealId: string]: boolean }>({});
-
+const orderIsCompleted = ref(false);
+const user = ref("");
 // Loading and async state
 const isProcessing = ref(false);
+
+const getUser = async () => {
+  try {
+    user.value = (await account.get()).email;
+  } catch (error) {
+    console.error("Error fetching user:", error);
+  }
+};
 
 const getItems = async () => {
   try {
@@ -227,6 +236,7 @@ const transferCartToOrders = async () => {
         price: cartItem.price,
         image: cartItem.image,
         $createdAt: new Date().toISOString(), // Ensure timestamp is accurate
+        user: user.value,
       };
 
       console.log("Creating order:", orderData);
@@ -241,7 +251,9 @@ const transferCartToOrders = async () => {
     for (const cartItem of cartItems) {
       await DB.deleteDocument(DB_ID, COLLECTION_CART, cartItem.$id);
       console.log(`Removed item from cart: ${cartItem.$id}`);
+      orderIsCompleted.value = true;
     }
+
     onOrderSuccess.value = true;
     setTimeout(() => {
       getIsCart();
@@ -252,6 +264,9 @@ const transferCartToOrders = async () => {
   } finally {
     isLoading.value = false;
     onOrderSuccess.value = false;
+    setTimeout(() => {
+      orderIsCompleted.value = false;
+    }, 1500);
   }
 };
 
@@ -328,6 +343,8 @@ onMounted(() => {
   getItems();
   getIsCart();
   getIsFavorite();
+
+  getUser();
 });
 
 // watch(
@@ -344,6 +361,15 @@ const setTimeoutFunction = () => {
     getIsCart();
   }, 1500);
 };
+
+watch(
+  () => transferCartToOrders,
+  async () => {
+    await setTimeout(() => {
+      getIsCart();
+    }, 2500);
+  }
+);
 </script>
 
 <template>
@@ -380,7 +406,9 @@ const setTimeoutFunction = () => {
         class="basis-1/3"
         :wrap-around="true"
       >
-        <div class="w-full h-full flex flex-col items-center justify-between">
+        <div
+          class="w-full h-full flex flex-col items-center justify-center border border-gray-900 rounded-3xl bg-transparent py-4"
+        >
           <div class="w-full flex flex-col items-center">
             <p>{{ cart.name }}</p>
             <p>{{ cart.price }}</p>
@@ -421,7 +449,10 @@ const setTimeoutFunction = () => {
         </div>
       </div>
     </div>
-    <div v-else>Add something to your cart</div>
+    <div v-else>
+      <div v-if="carts.length > 0 && orderIsCompleted">Order is completed</div>
+      <div v-else>Add something to your cart</div>
+    </div>
     <div class="w-full flex items-center justify-center py-10">
       <button
         @click="transferCartToOrders"
