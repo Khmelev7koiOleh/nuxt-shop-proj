@@ -18,7 +18,7 @@
     </aside>
 
     <!-- Main Content -->
-    <div :class="[{ 'md:ml-[200px] ml-[40px]': store.isAuth }, 'flex-1 p-4']">
+    <div :class="[{ 'md:ml-[200px] ml-[40px]': store.isAuth }, 'flex-1 ']">
       <slot />
     </div>
   </section>

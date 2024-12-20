@@ -3,6 +3,7 @@ export interface IMeals {
   price: number;
   image: string;
   mealId: string;
+  description?: string;
   user?: string;
   $createdAt: string;
   $id: string;

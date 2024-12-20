@@ -180,12 +180,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="text-2xl test-light text-gray-800 p-10">Today's best</div>
+  <div class="w-full mx-auto relative bg-black">
+    <!-- <div class="text-2xl test-light text-gray-300 p-4">Best for you</div> -->
 
-  <div class="max-w-[95%] mx-auto relative">
     <Carousel class="w-full max-w-[80vw] mx-auto">
-      <div class="absolute -top-5 right-20">
+      <div class="absolute top-[50%] left-20 z-50">
         <CarouselPrevious />
+      </div>
+      <div class="absolute top-[50%] right-20 z-50">
         <CarouselNext />
       </div>
       <CarouselContent>
@@ -197,7 +199,7 @@ onMounted(() => {
         >
           <NuxtLink
             :to="`/edit/${meal.$id}`"
-            class="w-full h-full flex flex-col items-center justify-between rounded-xl py-2"
+            class="w-full h-full flex flex-col items-center justify-between"
           >
             <div class="w-full flex flex-col items-center">
               <p>{{ meal.name }}</p>
@@ -205,7 +207,7 @@ onMounted(() => {
             </div>
             <img :src="meal.image" alt="Meal image" />
 
-            <div class="flex flex-wrap gap-4">
+            <div class="flex flex-wrap gap-4 text-white py-4">
               <button
                 @click="makeFavorite(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
@@ -237,10 +239,6 @@ onMounted(() => {
       </CarouselContent>
     </Carousel>
   </div>
-
-  <div class="py-40"></div>
 </template>
 
-<style scoped>
-/* Add your styles here */
-</style>
+<style scoped></style>

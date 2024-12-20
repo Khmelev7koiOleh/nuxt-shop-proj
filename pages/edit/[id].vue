@@ -24,6 +24,8 @@ const errorMessage = ref<string | null>(null);
 const route = useRoute();
 const mealId = route.params.id as string;
 
+const onOpen = ref(false);
+
 // Function to fetch the blog by ID from the DB
 const getBlogById = async () => {
   try {
@@ -33,11 +35,10 @@ const getBlogById = async () => {
         $id: response.$id,
         name: response.name,
         price: response.price,
-        // description: response.description,
+        description: response.description,
         image: response.image,
         $createdAt: response.$createdAt,
-        // status: response.status,
-        // documentId: response.$id,
+        mealId: mealId, // Add this line
       };
     } else {
       errorMessage.value = "Blog not found.";
@@ -71,6 +72,8 @@ onMounted(async () => {
   getBlogById();
   const userData = await account.get();
   user.value = userData;
+
+  console.log(user.value);
 });
 </script>
 
@@ -82,7 +85,7 @@ onMounted(async () => {
       {{ errorMessage }}
     </div>
 
-    <div v-else class="gap-4 p-4 rounded-lg max-w-full box-border">
+    <div v-else class="w-full gap-4 p-4 rounded-lg max-w-full box-border">
       <div class="flex justify-between gap-4 mx-auto mt-6 max-w-full">
         <NuxtLink to="/products">
           <Icon name="line-md:arrow-left" size="30" />
@@ -108,24 +111,52 @@ onMounted(async () => {
       </div>
 
       <!-- Blog content -->
-      <div v-if="meal" class="w-full flex gap-8 justify-around items-center">
+      <div
+        v-if="meal"
+        class="min-h-[70vh] flex gap-8 justify-around items-center overflow-x-auto"
+      >
         <div class="min-w-[45%]">
           <img :src="meal.image" alt="Blog Image" class="w-full" />
         </div>
 
         <div
-          class="flex flex-col gap-8 text-base font-bold text-center break-words w-full text-black"
+          class="flex flex-col justify-center items-center gap-8 text-base font-bold text-center break-words w-full text-black border rounded-xl py-8 px-8"
         >
-          <h2 class="text-2xl font-bold text-center break-words w-full">
-            {{ meal.name }}
-          </h2>
+          <div>
+            <h2 class="text-2xl font-bold text-center border-b">
+              {{ meal.name }}
+            </h2>
+          </div>
 
-          Price: {{ meal.price }}
+          <div>
+            <h2
+              class="text-xl font-light text-center border-b border rounded-xl bg-green-900 px-2 py-1 text-gray-100"
+            >
+              Price: {{ meal.price }}
+            </h2>
+          </div>
+        </div>
+      </div>
+      <div v-if="meal" class="flex">
+        <p class="text-2xl font-light">Recept</p>
+        <div v-if="!onOpen" @click="onOpen = !onOpen">
+          <Icon name="uiw:plus" class="w-5 h-5" />
+        </div>
+
+        <div v-if="onOpen" @click="onOpen = !onOpen">
+          <Icon name="uiw:close" class="w-5 h-5" />
+        </div>
+        <div v-if="onOpen">
+          <h2 class="text-sm font-light text-start text-format">
+            {{ meal.description }}
+          </h2>
         </div>
       </div>
     </div>
   </div>
-
+  <section>
+    <ICarousel />
+  </section>
   <!-- Comments -->
   <!-- <CommentsIComment /> -->
 </template>
@@ -134,5 +165,8 @@ onMounted(async () => {
 html,
 body {
   overflow-x: hidden; /* Prevents scrolling on the body */
+}
+.text-format {
+  white-space: pre-wrap;
 }
 </style>

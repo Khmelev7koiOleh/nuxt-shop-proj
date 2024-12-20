@@ -16,6 +16,7 @@ import type { IMeals } from "~/types/order.types";
 const nameRef = ref("");
 const priceRef = ref(0);
 const fileRef = ref<File | null>(null);
+const descriptionRef = ref("");
 
 const errorMessage = ref<string | null>(null);
 const isLoading = ref(false);
@@ -75,6 +76,8 @@ const handleFileChange = (event: Event) => {
 const resetForm = () => {
   nameRef.value = "";
   fileRef.value = null;
+  priceRef.value = 0;
+  descriptionRef.value = "";
   isLoading.value = false;
   errorMessage.value = null;
 };
@@ -109,6 +112,7 @@ const mutation = useMutation({
       name: nameRef.value,
       price: priceRef.value,
       image: imageURL,
+      description: descriptionRef.value,
       $createdAt: new Date().toISOString(),
     });
   },
@@ -176,6 +180,11 @@ onMounted(() => {
         placeholder="File"
         @change="handleFileChange"
       />
+      <textarea
+        class="bg-transparent border-b border-b-white cursor-pointer text-white text-format"
+        placeholder="Description"
+        v-model="descriptionRef"
+      ></textarea>
       <button
         @click="onSubmit"
         type="submit"
@@ -225,4 +234,8 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.text-format {
+  white-space: pre-wrap;
+}
+</style>
