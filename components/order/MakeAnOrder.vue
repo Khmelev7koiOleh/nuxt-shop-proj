@@ -116,13 +116,15 @@ const getIsCart = async () => {
     if (response.documents.length === 0) {
       errorMessage.value = "No favorites available.";
     } else {
-      carts.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+      carts.value = response.documents
+        .filter((document) => document.user === cDStore.user.email)
+        .map((document) => ({
+          $id: document.$id,
+          name: document.name,
+          price: document.price,
+          $createdAt: document.$createdAt,
+          image: document.image,
+        })) as IMeals[];
 
       total.value = carts.value.length;
       // Populate the favoriteMap with the current favorite status

@@ -13,6 +13,7 @@ const isLoading = ref(true);
 
 // State to control the filter visibility
 const onOpen = ref(false);
+const searchQuery = ref("");
 
 // Props
 const props = defineProps<{
@@ -102,6 +103,15 @@ const onDietFilter = () => {
   onOpen.value = false;
 };
 
+// SearchQuery function
+const onSearchQuery = () => {
+  const filteredOrders = props.orders.filter((order) =>
+    order.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+  console.log("Search query applied:", filteredOrders); // Log filtered orders
+  emit("updateOrders", filteredOrders);
+};
+
 const resetFilter = () => {
   const sortedOrders = [...props.orders].sort((a, b) => {
     const dateA = new Date(a.$createdAt);
@@ -126,7 +136,8 @@ onMounted(() => {
       <Icon
         name="ion:filter"
         @click="onOpen = !onOpen"
-        class="w-8 h-8 cursor-pointer text-bold absolute top-0 right-0 transform rotate-90 hover:scale-110 transition duration-200"
+        class="w-8 h-8 cursor-pointer text-bold absolute top-0 right-0 transform hover:scale-110 transition duration-200"
+        :class="onOpen ? 'rotate-180' : 'rotate-0'"
       />
     </div>
 
@@ -141,7 +152,18 @@ onMounted(() => {
         class="w-[300px] h-[70vh] border p-8 rounded-xl bg-black text-white shadow-lg"
       >
         <div class="flex flex-col gap-5">
-          <p class="font-light text-xl border-b text-center">Filter</p>
+          <div class="flex gap-6 border-b">
+            <div class="font-light text-xl text-center">
+              <Icon name="ion:search" class="w-6 h-6" />
+            </div>
+            <input
+              @input="onSearchQuery"
+              v-model="searchQuery"
+              class="bg-transparent outline-none"
+              type="text"
+              placeholder="Search..."
+            />
+          </div>
           <div class="flex flex-col items-center justify-center gap-6">
             <button @click="onCheapFilter">Cheap</button>
             <button @click="onExpensiveFilter">Expensive</button>

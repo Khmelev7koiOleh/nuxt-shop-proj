@@ -29,11 +29,114 @@ import { account } from "~/lib/appwrite";
 import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
 import { watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { DB, storage } from "~/lib/appwrite";
+import {
+  COLLECTION_MEALS,
+  COLLECTION_FAVORITES,
+  COLLECTION_CART,
+  DB_ID,
+  STORAGE_ID,
+} from "~/app.constants";
+import type { IMeals } from "~/types/order.types";
+import { useFavoritesStore } from "~/store/createDocument.store";
+
+const cDStore = useFavoritesStore();
 
 const isLoadingStore = useIsLoadingStore();
 const store = useAuthStore();
 const router = useRouter();
+const errorMessage = ref<string | null>(null);
 
+const meals = ref<IMeals[]>([]);
+const favorites = ref<IMeals[]>([]);
+const carts = ref<IMeals[]>([]);
+
+const favoriteMap = ref<{ [mealId: string]: boolean }>({});
+const cartMap = ref<{ [mealId: string]: boolean }>({});
+
+// Loading and async state
+const isProcessing = ref(false);
+
+const getItems = async () => {
+  try {
+    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+    if (response.documents.length === 0) {
+      errorMessage.value = "No meals available.";
+    } else {
+      meals.value = response.documents.map((document) => ({
+        $id: document.$id,
+        name: document.name,
+        price: document.price,
+        $createdAt: document.$createdAt,
+        image: document.image,
+      })) as IMeals[];
+
+      meals.value.sort((a, b) => {
+        const dateA = new Date(a.$createdAt);
+        const dateB = new Date(b.$createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching meals:", error);
+    errorMessage.value = "An error occurred while fetching meals.";
+  }
+};
+
+// Fetch favorites and update favorite map
+const getIsFavorite = async () => {
+  try {
+    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+    if (response.documents.length === 0) {
+      errorMessage.value = "No favorites available.";
+    } else {
+      favorites.value = response.documents.map((document) => ({
+        $id: document.$id,
+        name: document.name,
+        price: document.price,
+        $createdAt: document.$createdAt,
+        image: document.image,
+      })) as IMeals[];
+
+      // Populate the favoriteMap with the current favorite status
+      favorites.value.forEach((meal) => {
+        favoriteMap.value[meal.$id] = true;
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+    errorMessage.value = "An error occurred while fetching favorites.";
+  }
+};
+
+const getIsCart = async () => {
+  try {
+    const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
+    if (response.documents.length === 0) {
+      errorMessage.value = "No favorites available.";
+    } else {
+      carts.value = response.documents
+        .filter((document) => document.user === cDStore.user.email)
+        .map((document) => ({
+          $id: document.$id,
+          name: document.name,
+          price: document.price,
+          user: document.user,
+          $createdAt: document.$createdAt,
+          image: document.image,
+          mealId: document.mealId,
+        })) as IMeals[];
+
+      // Populate the favoriteMap with the current favorite status
+      carts.value.forEach((cart) => {
+        cartMap.value[cart.mealId] = true;
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+    errorMessage.value = "An error occurred while fetching favorites.";
+  }
+};
 const logout = () => {
   account.deleteSession("current");
   store.set({ email: "", name: "", status: false });
@@ -65,4 +168,7 @@ onMounted(async () => {
     isLoadingStore.set(false);
   }
 });
+await getItems();
+await getIsFavorite();
+await getIsCart();
 </script>

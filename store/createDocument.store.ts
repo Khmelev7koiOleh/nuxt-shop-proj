@@ -1,12 +1,12 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import {
   DB_ID,
   COLLECTION_FAVORITES,
   COLLECTION_MEALS,
   COLLECTION_CART,
 } from "@/app.constants";
-import { DB } from "@/lib/appwrite";
+import { DB, account } from "@/lib/appwrite";
 import { v4 as uuid } from "uuid";
 import type { IMeals } from "~/types/order.types";
 
@@ -16,6 +16,8 @@ export const useFavoritesStore = defineStore("favorites", () => {
   const isLoading = ref(false);
   const errorMessage = ref<string | null>(null);
   const loading = ref(false);
+  0;
+  const user = ref({ email: "" });
 
   // Utility: Log errors
   const handleError = (error: unknown, message: string) => {
@@ -48,6 +50,20 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   };
 
+  const fetchCartItems = async () => {
+    loading.value = true;
+    errorMessage.value = null;
+
+    try {
+      const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
+      favorites.value = response.documents.map(mapDocumentToMeal);
+    } catch (error) {
+      handleError(error, "Failed to fetch favorites.");
+    } finally {
+      loading.value = false;
+    }
+  };
+
   // Add meal to favorites
   const addToCart = async (mealId: string) => {
     isLoading.value = true;
@@ -62,12 +78,13 @@ export const useFavoritesStore = defineStore("favorites", () => {
         name: mealDoc.name,
         price: mealDoc.price,
         image: mealDoc.image,
+        user: user.value.email,
         $createdAt: new Date().toISOString(),
         mealId: mealId,
       };
-      console.log(newFavorite.mealId);
+
       // Create a new favorite document
-      await DB.createDocument(DB_ID, COLLECTION_CART, mealId, newFavorite);
+      await DB.createDocument(DB_ID, COLLECTION_CART, uuid(), newFavorite);
 
       // Refresh the favorites list
       await fetchFavorites();
@@ -188,6 +205,12 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   };
 
+  onMounted(async () => {
+    const getUserEmail = await account.get();
+    user.value = getUserEmail;
+    console.log(user.value.email);
+  });
+
   return {
     favorites,
     isLoading,
@@ -197,7 +220,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
     fetchFavorites,
     removeFavorite,
     removeFromCart,
-
+    user,
     loading,
   };
 });

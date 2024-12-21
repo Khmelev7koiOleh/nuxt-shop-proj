@@ -5,6 +5,8 @@ import {
   COLLECTION_ORDERS,
   STORAGE_ID,
   COLLECTION_MEALS,
+  COLLECTION_FAVORITES,
+  COLLECTION_CART,
 } from "@/app.constants";
 import { account, DB, storage } from "@/lib/appwrite";
 import { useMutation } from "@tanstack/vue-query";
@@ -151,6 +153,9 @@ const onSubmit = handleSubmit(() => {
 const deleteOrder = async (id: string) => {
   try {
     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
+    await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
+    await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
+
     getItems(); // Refresh items after deletion
   } catch (error) {
     console.error("Error deleting order:", error);
@@ -158,8 +163,8 @@ const deleteOrder = async (id: string) => {
 };
 
 // Initialize onMounted lifecycle
-onMounted(() => {
-  getItems();
+onMounted(async () => {
+  await getItems();
   ifAdmin();
 });
 </script>
@@ -176,13 +181,13 @@ onMounted(() => {
       class="p-4 bg-black mb-20 flex flex-col justify-center gap-6 w-1/3 rounded-2xl placeholder:text-white"
     >
       <input
-        class="bg-transparent border-b border-b-white text-white"
+        class="bg-transparent border-b border-b-white text-white outline-none"
         type="text"
         v-model="nameRef"
         placeholder="Title"
       />
       <input
-        class="bg-transparent border-b border-b-white text-white"
+        class="bg-transparent border-b border-b-white text-white outline-none"
         type="number"
         v-model="priceRef"
         placeholder="Price"
@@ -204,7 +209,7 @@ onMounted(() => {
         @change="handleFileChange"
       />
       <textarea
-        class="bg-transparent border-b border-b-white cursor-pointer text-white text-format"
+        class="bg-transparent border-b border-b-white cursor-pointer text-white text-format outline-none"
         placeholder="Description"
         v-model="descriptionRef"
       ></textarea>

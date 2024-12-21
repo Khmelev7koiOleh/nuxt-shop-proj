@@ -149,7 +149,7 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-      <div v-if="onOpen">
+      <div v-if="onOpen && meal">
         <h2 class="text-sm font-light text-format">
           {{ meal.description }}
         </h2>

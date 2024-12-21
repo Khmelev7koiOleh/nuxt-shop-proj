@@ -105,13 +105,16 @@ const getIsCart = async () => {
     if (response.documents.length === 0) {
       errorMessage.value = "No favorites available.";
     } else {
-      carts.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+      carts.value = response.documents
+        .filter((document) => document.user === cDStore.user.email)
+        .map((document) => ({
+          $id: document.$id,
+          name: document.name,
+          price: document.price,
+          user: document.user,
+          $createdAt: document.$createdAt,
+          image: document.image,
+        })) as IMeals[];
 
       carts.value.sort((a, b) => {
         const dateA = new Date(a.$createdAt);
@@ -281,6 +284,7 @@ onMounted(() => {
   getItems();
   getIsCart();
   getIsFavorite();
+  console.log(carts);
 });
 
 watch(
@@ -342,6 +346,7 @@ const setTimeoutFunction = async () => {
             :wrap-around="true"
           >
             <div
+              v-if="cart.user === cDStore.user.email"
               class="w-full h-full flex flex-col items-center justify-between"
             >
               <div class="w-full flex flex-col items-center">
