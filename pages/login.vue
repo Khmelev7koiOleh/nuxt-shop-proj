@@ -5,13 +5,17 @@ import {
   useIsSidebarOpenStore,
 } from "~/store/auth.store";
 import { v4 as uuid } from "uuid";
-import { useSeoMeta, useRouter, ref, watch } from "#imports"; // Ensure to import these as needed
+import { ref, watch, onMounted } from "vue"; // Ensure to import these as needed
+import { useRouter } from "vue-router";
 import { account } from "~/lib/appwrite";
+import { errorMessages } from "vue/compiler-sfc";
+import { useGetItems } from "@/composables/getIAlltems";
 
 useSeoMeta({
   title: "Login",
 });
 
+const { getItems, getIsCart, getIsFavorite } = useGetItems();
 const isSidebarOpen = useIsSidebarOpenStore();
 const emailRef = ref("");
 const passwordRef = ref("");
@@ -20,6 +24,7 @@ const nameRef = ref("");
 const isLoadingStore = useIsLoadingStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const errorMessage = ref<string | null>(null);
 
 // Function to handle login
 const login = async () => {
@@ -39,9 +44,14 @@ const login = async () => {
     }
   } catch (error) {
     console.error("Login error:", error); // Handle error appropriately
+    errorMessage.value = "Login failed. Please check your credentials.";
   } finally {
     isLoadingStore.set(false);
+    await getItems();
+    await getIsFavorite();
+    await getIsCart();
   }
+  // getItems()
 };
 
 // Function to handle registration
@@ -58,14 +68,27 @@ const register = async () => {
     isSidebarOpen.set(true); // Log in automatically after registration
   } catch (error) {
     console.error("Registration error:", error); // Handle error appropriately
+    errorMessage.value = "Registration failed.  Please check your credentials.";
   } finally {
     isLoadingStore.set(false);
   }
 };
 
+onMounted(async () => {
+  await setTimeout(() => {
+    getIsCart();
+    getIsFavorite();
+    getItems();
+  }, 1500);
+});
 // Watcher for debugging email input (optional)
-watch(isSidebarOpen, () => {
+watch(isSidebarOpen, async () => {
   console.log("isSidebarOpen:", isSidebarOpen);
+  await setTimeout(() => {
+    getIsCart();
+    getIsFavorite();
+    getItems();
+  }, 1500);
 });
 </script>
 
@@ -73,6 +96,10 @@ watch(isSidebarOpen, () => {
   <div class="p-10 flex justify-center items-center min-h-screen w-full">
     <div class="rounded bg-gray-900 w-1/4 p-5">
       <h1 class="text-2xl font-bold text-center mb-5 text-gray-100">Login</h1>
+
+      <div class="text-red-500 flex justify-center">
+        {{ errorMessage }}
+      </div>
       <form>
         <UiInput
           v-model="emailRef"

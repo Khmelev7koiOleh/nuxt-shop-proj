@@ -175,6 +175,20 @@ const makeCart = async (meal: IMeals) => {
     isProcessing.value = false; // Reset loading state
   }
 };
+const resetState = () => {
+  meals.value = [];
+  favorites.value = [];
+  carts.value = [];
+  favoriteMap.value = {};
+  cartMap.value = {};
+  errorMessage.value = null;
+};
+const refetch = () => {
+  resetState();
+  getItems();
+  getIsFavorite();
+  getIsCart();
+};
 
 // Handle file change
 
@@ -184,6 +198,15 @@ onMounted(() => {
   getIsFavorite();
   getIsCart();
 });
+watch(
+  () => cDStore.user,
+  (newUser, oldUser) => {
+    if (newUser !== oldUser) {
+      resetState();
+      refetch();
+    }
+  }
+);
 </script>
 
 <template>
@@ -244,7 +267,7 @@ onMounted(() => {
       </CarouselContent>
     </Carousel>
   </div>
-
+  <button @click="refetch">Refetch</button>
   <div class="py-40"></div>
 </template>
 
