@@ -363,11 +363,10 @@ const setTimeoutFunction = () => {
 };
 
 watch(
-  () => transferCartToOrders,
+  () => carts.value.length,
   async () => {
-    await setTimeout(() => {
-      getIsCart();
-    }, 2500);
+    await getIsCart();
+    console.log(isLoading.value);
   }
 );
 </script>

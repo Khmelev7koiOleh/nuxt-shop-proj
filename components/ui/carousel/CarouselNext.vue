@@ -23,7 +23,7 @@ const { orientation, canScrollNext, scrollNext } = useCarousel();
       )
     "
     variant="outline"
-    @click="scrollNext"
+    @click.prevent="scrollNext"
   >
     <slot>
       <ArrowRightIcon class="h-7 w-7 text-bold" />

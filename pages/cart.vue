@@ -113,6 +113,11 @@ const getIsCart = async () => {
         image: document.image,
       })) as IMeals[];
 
+      carts.value.sort((a, b) => {
+        const dateA = new Date(a.$createdAt);
+        const dateB = new Date(b.$createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
       total.value = carts.value.length;
       // Populate the favoriteMap with the current favorite status
       carts.value.forEach((cart) => {
@@ -278,17 +283,17 @@ onMounted(() => {
   getIsFavorite();
 });
 
-// watch(
-//   () => carts.value,
-//   async () => {
-//     await setTimeout(() => {
-//       getIsCart();
-//       getIsFavorite();
-//     }, 1500);
-//   }
-// );
-const setTimeoutFunction = () => {
-  setTimeout(() => {
+watch(
+  () => carts.value.length,
+  async () => {
+    await setTimeout(() => {
+      getIsCart();
+      getIsFavorite();
+    }, 1500);
+  }
+);
+const setTimeoutFunction = async () => {
+  await setTimeout(() => {
     getIsCart();
   }, 1500);
 };
@@ -382,7 +387,7 @@ const setTimeoutFunction = () => {
       </Carousel>
     </div>
     <div v-else>Add something to your cart</div>
-    <div class="py-40"></div>
+    <div class="py-20"></div>
   </section>
 </template>
 

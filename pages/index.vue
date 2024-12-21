@@ -207,7 +207,7 @@ onMounted(() => {
 
             <div class="flex flex-wrap gap-4">
               <button
-                @click="makeFavorite(meal)"
+                @click.prevent="makeFavorite(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon
@@ -221,7 +221,7 @@ onMounted(() => {
               </button>
 
               <button
-                @click="makeCart(meal)"
+                @click.prevent="makeCart(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon

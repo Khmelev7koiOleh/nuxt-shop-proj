@@ -5,6 +5,7 @@ export interface IMeals {
   mealId: string;
   description?: string;
   user?: string;
+  category?: string;
   $createdAt: string;
   $id: string;
 }

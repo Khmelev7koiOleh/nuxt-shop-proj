@@ -83,6 +83,12 @@ const getIsFavorite = async () => {
         image: document.image,
       })) as IMeals[];
 
+      favorites.value.sort((a, b) => {
+        const dateA = new Date(a.$createdAt);
+        const dateB = new Date(b.$createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+
       // Populate the favoriteMap with the current favorite status
       favorites.value.forEach((meal) => {
         favoriteMap.value[meal.$id] = true;

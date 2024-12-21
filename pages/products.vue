@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-
 import {
   DB_ID,
   COLLECTION_ORDERS,
@@ -13,33 +12,35 @@ import { v4 as uuid } from "uuid";
 import { useForm } from "vee-validate";
 import type { IMeals } from "~/types/order.types";
 
+// Refs for form and state management
 const nameRef = ref("");
 const priceRef = ref(0);
 const fileRef = ref<File | null>(null);
 const descriptionRef = ref("");
-
+const selectedCategory = ref("");
 const errorMessage = ref<string | null>(null);
 const isLoading = ref(false);
 const orders = ref<IMeals[]>([]);
-
+const filteredOrders = ref<IMeals[]>([]); // For filtered orders
 const onOpen = ref(false);
 const isAdmin = ref(false);
 
+// Admin check
 const ifAdmin = async () => {
   const user = await account.get();
-  if (user) {
-    if (user.email === "admin@gmail.com") {
-      isAdmin.value = true;
-    }
+  if (user && user.email === "admin@gmail.com") {
+    isAdmin.value = true;
   } else {
     isAdmin.value = false;
   }
 };
+
+// Fetch items from DB
 const getItems = async () => {
   try {
     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
     if (response.documents.length === 0) {
-      errorMessage.value = "No blogs available.";
+      errorMessage.value = "No products available.";
     } else {
       orders.value = response.documents.map((document) => ({
         $id: document.$id,
@@ -47,6 +48,7 @@ const getItems = async () => {
         price: document.price,
         $createdAt: document.$createdAt,
         image: document.image,
+        category: document.category,
       })) as IMeals[];
 
       orders.value.sort((a, b) => {
@@ -54,15 +56,25 @@ const getItems = async () => {
         const dateB = new Date(b.$createdAt);
         return dateB.getTime() - dateA.getTime();
       });
+
+      // Initialize filteredOrders with all items
+      filteredOrders.value = [...orders.value];
     }
   } catch (error) {
-    console.error("Error fetching blogs:", error);
-    errorMessage.value = "An error occurred while fetching blogs.";
+    console.error("Error fetching products:", error);
+    errorMessage.value = "An error occurred while fetching products.";
   } finally {
     isLoading.value = false;
   }
 };
 
+// Handle filtering of orders
+const handleUpdateOrders = (updatedOrders: IMeals[]) => {
+  console.log("Updated orders in parent:", updatedOrders);
+  filteredOrders.value = updatedOrders; // Update the filtered orders
+};
+
+// File handling
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
@@ -72,12 +84,13 @@ const handleFileChange = (event: Event) => {
   }
 };
 
-// Reset form
+// Form reset
 const resetForm = () => {
   nameRef.value = "";
   fileRef.value = null;
   priceRef.value = 0;
   descriptionRef.value = "";
+  selectedCategory.value = "";
   isLoading.value = false;
   errorMessage.value = null;
 };
@@ -113,6 +126,7 @@ const mutation = useMutation({
       price: priceRef.value,
       image: imageURL,
       description: descriptionRef.value,
+      category: selectedCategory.value,
       $createdAt: new Date().toISOString(),
     });
   },
@@ -133,29 +147,28 @@ const onSubmit = handleSubmit(() => {
   mutation.mutate();
 });
 
+// Delete order
 const deleteOrder = async (id: string) => {
   try {
     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
-    getItems();
+    getItems(); // Refresh items after deletion
   } catch (error) {
     console.error("Error deleting order:", error);
   }
 };
 
+// Initialize onMounted lifecycle
 onMounted(() => {
   getItems();
   ifAdmin();
 });
 </script>
+
 <template>
   <div class="text-2xl test-light text-gray-800 p-10">All products</div>
   <div v-if="isAdmin" class="flex flex-col justify-center items-center gap-8">
-    <div v-if="!onOpen" @click="onOpen = !onOpen">
-      <Icon name="uiw:plus" class="w-8 h-8" />
-    </div>
-
-    <div v-if="onOpen" @click="onOpen = !onOpen">
-      <Icon name="uiw:close" class="w-8 h-8" />
+    <div @click="onOpen = !onOpen" class="cursor-pointer">
+      <Icon :name="onOpen ? 'uiw:close' : 'uiw:plus'" class="w-8 h-8" />
     </div>
 
     <div
@@ -174,6 +187,16 @@ onMounted(() => {
         v-model="priceRef"
         placeholder="Price"
       />
+      <select
+        class="bg-transparent border-b border-b-white text-white placeholder:text-white"
+        name="Category"
+        v-model="selectedCategory"
+      >
+        <option value="burger">Burgers</option>
+        <option value="set">Sets</option>
+        <option value="vegan">For Vegans</option>
+        <option value="diet">For Diet</option>
+      </select>
       <input
         class="bg-transparent border-b border-b-white cursor-pointer"
         type="file"
@@ -196,20 +219,23 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- Filter Component to handle category-based filtering -->
+  <Filter :orders="orders" @updateOrders="handleUpdateOrders" />
+
   <div class="max-w-[95%] mx-auto flex flex-wrap my-10">
     <UiCard
-      v-for="order in orders"
+      v-for="order in filteredOrders"
       :key="order.$id"
       class="basis-1/4"
       :wrap-around="true"
     >
       <NuxtLink
-        :href="`./edit/${order.$id}`"
+        :href="`/edit/${order.$id}`"
         class="w-full h-full flex flex-col justify-between items-center border border-gray-300 rounded-3xl bg-black py-4 relative"
       >
         <div v-if="isAdmin" class="absolute top-4 left-4">
           <button
-            @click="deleteOrder(order.$id)"
+            @click.prevent="deleteOrder(order.$id)"
             class="bg-red-500 text-white p-1 flex items-center justify-center rounded-full"
           >
             <Icon :name="'ph:trash'" class="w-5 h-5 text-bold" />
@@ -218,7 +244,6 @@ onMounted(() => {
         <div class="w-full h-full flex flex-col justify-between items-center">
           <p class="text-gray-100">{{ order.name }}</p>
           <img :src="order.image" alt="Order image" />
-
           <p class="text-gray-100">Price:{{ order.price }}</p>
         </div>
         <div class="py-4"></div>
@@ -229,13 +254,5 @@ onMounted(() => {
         </div>
       </NuxtLink>
     </UiCard>
-
-    <!-- make a card for every single element of  the collection -->
   </div>
 </template>
-
-<style scoped>
-.text-format {
-  white-space: pre-wrap;
-}
-</style>

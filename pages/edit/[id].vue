@@ -137,20 +137,22 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <div v-if="meal" class="flex">
-        <p class="text-2xl font-light">Recept</p>
-        <div v-if="!onOpen" @click="onOpen = !onOpen">
-          <Icon name="uiw:plus" class="w-5 h-5" />
-        </div>
+      <div v-if="meal" class="w-full">
+        <div class="border-b flex items-center gap-2">
+          <p class="text-2xl font-light">Recept</p>
+          <button v-if="!onOpen" @click="onOpen = !onOpen">
+            <Icon name="uiw:plus" class="flex items-center w-7 h-7" />
+          </button>
 
-        <div v-if="onOpen" @click="onOpen = !onOpen">
-          <Icon name="uiw:close" class="w-5 h-5" />
+          <button v-if="onOpen" @click="onOpen = !onOpen">
+            <Icon name="uiw:close" class="flex items-center w-7 h-7" />
+          </button>
         </div>
-        <div v-if="onOpen">
-          <h2 class="text-sm font-light text-start text-format">
-            {{ meal.description }}
-          </h2>
-        </div>
+      </div>
+      <div v-if="onOpen">
+        <h2 class="text-sm font-light text-format">
+          {{ meal.description }}
+        </h2>
       </div>
     </div>
   </div>
