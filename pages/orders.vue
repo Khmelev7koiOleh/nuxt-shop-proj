@@ -80,12 +80,17 @@ onMounted(async () => {
         v-if="order.user && order.user == user.email"
         class="w-full h-full flex flex-col items-center justify-between gap-8 border border-gray-300 rounded-3xl bg-black py-4 hover:bg-gray-900"
       >
-        <div class="w-full flex flex-col items-center text-white">
+        <div
+          v-if="orders.length > 0"
+          class="w-full flex flex-col items-center text-white"
+        >
           <p>{{ order.name }}</p>
         </div>
         <img :src="order.image" alt="Meal image" />
         <p class="text-gray-100">Price: {{ order.price }}</p>
       </div>
+
+      <div v-else>No orders were created</div>
     </div>
 
     <!-- make a card for every single element of  the collection -->

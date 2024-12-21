@@ -75,13 +75,16 @@ const getIsFavorite = async () => {
     if (response.documents.length === 0) {
       errorMessage.value = "No favorites available.";
     } else {
-      favorites.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+      favorites.value = response.documents
+        .filter((document) => document.user === cDStore.user.email)
+        .map((document) => ({
+          $id: document.$id,
+          name: document.name,
+          price: document.price,
+          user: document.user,
+          $createdAt: document.$createdAt,
+          image: document.image,
+        })) as IMeals[];
 
       favorites.value.sort((a, b) => {
         const dateA = new Date(a.$createdAt);

@@ -87,7 +87,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
       await DB.createDocument(DB_ID, COLLECTION_CART, uuid(), newFavorite);
 
       // Refresh the favorites list
-      await fetchFavorites();
+      await fetchCartItems();
     } catch (error) {
       handleError("Failed to add to favorites.", error);
     } finally {
@@ -107,12 +107,13 @@ export const useFavoritesStore = defineStore("favorites", () => {
         name: mealDoc.name,
         price: mealDoc.price,
         image: mealDoc.image,
+        user: user.value.email,
         $createdAt: new Date().toISOString(),
         mealId: mealId,
       };
       console.log(newFavorite.mealId);
       // Create a new favorite document
-      await DB.createDocument(DB_ID, COLLECTION_FAVORITES, mealId, newFavorite);
+      await DB.createDocument(DB_ID, COLLECTION_FAVORITES, uuid(), newFavorite);
 
       // Refresh the favorites list
       await fetchFavorites();
