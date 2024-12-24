@@ -163,7 +163,7 @@ onMounted(async () => {
   <LayoutLoader v-if="isLoadingStore.isLoading" />
 
   <!-- Main Layout -->
-  <section v-if="!isLoading" class="min-h-screen flex flex-col md:flex-row">
+  <section class="min-h-screen flex flex-col md:flex-row">
     <!-- Sidebar for authenticated users -->
     <aside
       v-if="store.isAuth"
@@ -178,7 +178,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <div>
+  <div v-if="false">
     <form class="flex flex-col items-center justify-center">
       <UiInput
         v-model="emailRef"
