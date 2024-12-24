@@ -24,9 +24,6 @@ const backup = ref(false);
 
 // Example usage:
 
-useSeoMeta({
-  title: "Login",
-});
 const login = () => {
   loginMutate({ email: emailRef.value, password: passwordRef.value });
 };
@@ -181,7 +178,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <div v-if="!authStore.isAuth && backup">
+  <div>
     <form class="flex flex-col items-center justify-center">
       <UiInput
         v-model="emailRef"

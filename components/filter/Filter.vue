@@ -17,12 +17,12 @@ const searchQuery = ref("");
 
 // Props
 const props = defineProps<{
-  orders: IMeals[];
+  data: IMeals[];
 }>();
 
 // Watch for changes in orders prop
 watch(
-  () => props.orders,
+  () => props.data,
   (newOrders, oldOrders) => {
     console.log("Orders updated:", newOrders); // Logs the updated orders whenever it changes
     console.log("Previous orders:", oldOrders); // Logs the previous orders
@@ -32,21 +32,21 @@ watch(
 
 // Filter functions
 const onCheapFilter = () => {
-  const sortedOrders = [...props.orders].sort((a, b) => a.price - b.price);
+  const sortedOrders = [...props.data].sort((a, b) => a.price - b.price);
   console.log("Cheap filter applied:", sortedOrders); // Log filtered orders
   emit("updateOrders", sortedOrders);
   onOpen.value = false;
 };
 
 const onExpensiveFilter = () => {
-  const sortedOrders = [...props.orders].sort((a, b) => b.price - a.price);
+  const sortedOrders = [...props.data].sort((a, b) => b.price - a.price);
   console.log("Expensive filter applied:", sortedOrders); // Log filtered orders
   emit("updateOrders", sortedOrders);
   onOpen.value = false;
 };
 
 const onNewestFilter = () => {
-  const sortedOrders = [...props.orders].sort((a, b) => {
+  const sortedOrders = [...props.data].sort((a, b) => {
     const dateA = new Date(a.$createdAt);
     const dateB = new Date(b.$createdAt);
     return dateB.getTime() - dateA.getTime();
@@ -57,7 +57,7 @@ const onNewestFilter = () => {
 };
 
 const onOldestFilter = () => {
-  const sortedOrders = [...props.orders].sort((a, b) => {
+  const sortedOrders = [...props.data].sort((a, b) => {
     const dateA = new Date(a.$createdAt);
     const dateB = new Date(b.$createdAt);
     return dateA.getTime() - dateB.getTime();
@@ -68,8 +68,8 @@ const onOldestFilter = () => {
 };
 
 const onBurgerFilter = () => {
-  const filteredOrders = props.orders.filter(
-    (order) => order.category === "burger"
+  const filteredOrders = props.data.filter(
+    (data) => data.category === "burger"
   );
   console.log("Burger filter applied:", filteredOrders); // Log filtered orders
   emit("updateOrders", filteredOrders);
@@ -77,27 +77,21 @@ const onBurgerFilter = () => {
 };
 
 const onSetFilter = () => {
-  const filteredOrders = props.orders.filter(
-    (order) => order.category === "set"
-  );
+  const filteredOrders = props.data.filter((data) => data.category === "set");
   console.log("Set filter applied:", filteredOrders); // Log filtered orders
   emit("updateOrders", filteredOrders);
   onOpen.value = false;
 };
 
 const onVeganFilter = () => {
-  const filteredOrders = props.orders.filter(
-    (order) => order.category === "vegan"
-  );
+  const filteredOrders = props.data.filter((data) => data.category === "vegan");
   console.log("Vegan filter applied:", filteredOrders); // Log filtered orders
   emit("updateOrders", filteredOrders);
   onOpen.value = false;
 };
 
 const onDietFilter = () => {
-  const filteredOrders = props.orders.filter(
-    (order) => order.category === "diet"
-  );
+  const filteredOrders = props.data.filter((data) => data.category === "diet");
   console.log("Diet filter applied:", filteredOrders); // Log filtered orders
   emit("updateOrders", filteredOrders);
   onOpen.value = false;
@@ -105,15 +99,15 @@ const onDietFilter = () => {
 
 // SearchQuery function
 const onSearchQuery = () => {
-  const filteredOrders = props.orders.filter((order) =>
-    order.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  const filteredOrders = props.data.filter((data) =>
+    data.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
   console.log("Search query applied:", filteredOrders); // Log filtered orders
   emit("updateOrders", filteredOrders);
 };
 
 const resetFilter = () => {
-  const sortedOrders = [...props.orders].sort((a, b) => {
+  const sortedOrders = [...props.data].sort((a, b) => {
     const dateA = new Date(a.$createdAt);
     const dateB = new Date(b.$createdAt);
     return dateB.getTime() - dateA.getTime();
@@ -125,7 +119,7 @@ const resetFilter = () => {
 
 // Check if the orders are received correctly
 onMounted(() => {
-  console.log("Mounted orders:", props.orders); // Check if orders are passed from the parent
+  console.log("Mounted orders:", props.data); // Check if orders are passed from the parent
 });
 </script>
 

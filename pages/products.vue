@@ -16,17 +16,19 @@ import type { IMeals } from "~/types/order.types";
 import { useCreateMeal } from "~/composables/useCreateMeal";
 import { useGetMeals } from "~/composables/useGetMeals";
 import { useDeleteMeal } from "~/composables/useDeleteMeal";
+import { useResetForm } from "~/composables/resetForm";
+
+const { resetForm, nameRef, priceRef, descriptionRef, selectedCategory } =
+  useResetForm();
 
 // Refs for form and state management
-const nameRef = ref("");
-const priceRef = ref(0);
+
 const fileRef = ref<File | null>(null);
-const descriptionRef = ref("");
-const selectedCategory = ref("");
+
 const errorMessage = ref<string | null>(null);
 const isLoading = ref(false);
 const orders = ref<IMeals[]>([]);
-const filteredOrders = ref<IMeals[]>([]); // For filtered orders
+const filteredOrders = ref<IMeals[]>([]);
 const onOpen = ref(false);
 const isAdmin = ref(false);
 
@@ -36,6 +38,12 @@ const {
   isPending: isPendingDelete,
   isError: isErrorDelete,
 } = useDeleteMeal();
+
+const {
+  mutate: createMeal,
+  isPending: isPendingCreate,
+  isError: isErrorCreate,
+} = useCreateMeal();
 
 // Admin check
 const ifAdmin = async () => {
@@ -80,12 +88,21 @@ const ifAdmin = async () => {
 //   }
 // };
 
+// Watch `data` and initialize `filteredOrders`
+watch(
+  () => data?.value,
+  (newData) => {
+    if (newData) {
+      filteredOrders.value = [...newData]; // Initialize with all meals
+    }
+  },
+  { immediate: true }
+);
 // Handle filtering of orders
 const handleUpdateOrders = (updatedOrders: IMeals[]) => {
   console.log("Updated orders in parent:", updatedOrders);
   filteredOrders.value = updatedOrders; // Update the filtered orders
 };
-
 // File handling
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -97,15 +114,15 @@ const handleFileChange = (event: Event) => {
 };
 
 // Form reset
-const resetForm = () => {
-  nameRef.value = "";
-  fileRef.value = null;
-  priceRef.value = 0;
-  descriptionRef.value = "";
-  selectedCategory.value = "";
-  isLoading.value = false;
-  errorMessage.value = null;
-};
+// const resetForm = () => {
+//   nameRef.value = "";
+//   fileRef.value = null;
+//   priceRef.value = 0;
+//   descriptionRef.value = "";
+//   selectedCategory.value = "";
+//   isLoading.value = false;
+//   errorMessage.value = null;
+// };
 
 // Upload image
 const uploadImage = async () => {
@@ -125,39 +142,56 @@ const uploadImage = async () => {
 };
 
 // Use form with validation
-const { handleSubmit } = useForm<IMeals>();
-const mutation = useMutation({
-  mutationKey: ["meals", nameRef.value],
-  mutationFn: async () => {
-    const uploadedFile = await uploadImage();
-    if (!uploadedFile) throw new Error("File upload failed.");
 
-    const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
-    return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
-      name: nameRef.value,
-      price: priceRef.value,
-      image: imageURL,
-      description: descriptionRef.value,
-      category: selectedCategory.value,
-      $createdAt: new Date().toISOString(),
-    });
-  },
-  onSuccess: () => {
-    console.log("Meal created successfully.");
-    resetForm();
-    // getItems(); // Refresh meals
-  },
-  onError: (error) => {
-    console.error("Error creating meal:", error);
-    errorMessage.value = "Meal creation failed.";
-  },
-});
+// const mutation = useMutation({
+//   mutationKey: ["meals", nameRef.value],
+//   mutationFn: async () => {
+//     const uploadedFile = await uploadImage();
+//     if (!uploadedFile) throw new Error("File upload failed.");
+
+//     const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
+//     return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
+//       name: nameRef.value,
+//       price: priceRef.value,
+//       image: imageURL,
+//       description: descriptionRef.value,
+//       category: selectedCategory.value,
+//       $createdAt: new Date().toISOString(),
+//     });
+//   },
+//   onSuccess: () => {
+//     console.log("Meal created successfully.");
+//     resetForm();
+//     // getItems(); // Refresh meals
+//   },
+//   onError: (error) => {
+//     console.error("Error creating meal:", error);
+//     errorMessage.value = "Meal creation failed.";
+//   },
+// });
 
 // Form submission
-const onSubmit = handleSubmit(() => {
-  isLoading.value = true;
-  mutation.mutate();
-});
+const onSubmit = () => {
+  if (
+    !nameRef.value ||
+    !priceRef.value ||
+    !descriptionRef.value ||
+    !selectedCategory.value ||
+    !fileRef.value
+  ) {
+    console.error("All fields are required.");
+    return;
+  }
+
+  createMeal({
+    name: nameRef.value,
+    price: Number(priceRef.value), // Convert priceRef.value to a number
+    description: descriptionRef.value,
+    category: selectedCategory.value,
+    image: fileRef.value,
+  });
+  resetForm();
+};
 
 // Delete order
 // const deleteOrder = async (id: string) => {
@@ -251,11 +285,11 @@ onMounted(async () => {
   </div>
 
   <!-- Filter Component to handle category-based filtering -->
-  <Filter :orders="orders" @updateOrders="handleUpdateOrders" />
+  <Filter :data="data ?? []" @updateOrders="handleUpdateOrders" />
 
   <div class="max-w-[95%] mx-auto flex flex-wrap my-10">
     <UiCard
-      v-for="order in data"
+      v-for="order in filteredOrders"
       :key="order.$id"
       class="basis-1/4"
       :wrap-around="true"
