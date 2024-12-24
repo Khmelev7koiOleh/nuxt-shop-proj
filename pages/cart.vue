@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from "vue";
+import { ref, onMounted, watch } from "vue";
 
 import {
   DB_ID,
@@ -14,22 +14,20 @@ import { v4 as uuid } from "uuid";
 import { useForm } from "vee-validate";
 import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
+import { useRemoveItem } from "~/composables/removeFrom";
 import { useRouter } from "vue-router";
 import { openOrder } from "~/components/order/make-order.store";
+import { useGetCarts } from "@/composables/useGetCarts";
+import { useGetMeals } from "~/composables/useGetMeals";
+// composables
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { set } from "@vueuse/core";
+const { data, isLoading: isLoadingCart, isError: isErrorCart } = useGetCarts();
 
 const router = useRouter();
 
 // store
 const cDStore = useFavoritesStore();
+const removeStore = useRemoveItem();
 // Input references and error handling
 const nameRef = ref("");
 const priceRef = ref(0);
@@ -99,58 +97,32 @@ const getIsFavorite = async () => {
   }
 };
 
-const getIsCart = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      carts.value = response.documents
-        .filter((document) => document.user === cDStore.user.email)
-        .map((document) => ({
-          $id: document.$id,
-          name: document.name,
-          price: document.price,
-          user: document.user,
-          $createdAt: document.$createdAt,
-          image: document.image,
-        })) as IMeals[];
-
-      carts.value.sort((a, b) => {
-        const dateA = new Date(a.$createdAt);
-        const dateB = new Date(b.$createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
-      total.value = carts.value.length;
-      // Populate the favoriteMap with the current favorite status
-      carts.value.forEach((cart) => {
-        cartMap.value[cart.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
-
-// Fetch favorites and update favorite map
-// const getIsFavorite = async () => {
+// const getIsCart = async () => {
 //   try {
 //     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
 //     if (response.documents.length === 0) {
 //       errorMessage.value = "No favorites available.";
 //     } else {
-//       favorites.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//       })) as IMeals[];
+//       carts.value = response.documents
+//         .filter((document) => document.user === cDStore.user.email)
+//         .map((document) => ({
+//           $id: document.$id,
+//           name: document.name,
+//           price: document.price,
+//           user: document.user,
+//           $createdAt: document.$createdAt,
+//           image: document.image,
+//         })) as IMeals[];
 
+//       carts.value.sort((a, b) => {
+//         const dateA = new Date(a.$createdAt);
+//         const dateB = new Date(b.$createdAt);
+//         return dateB.getTime() - dateA.getTime();
+//       });
+//       total.value = carts.value.length;
 //       // Populate the favoriteMap with the current favorite status
-//       favorites.value.forEach((meal) => {
-//         favoriteMap.value[meal.$id] = true;
+//       carts.value.forEach((cart) => {
+//         cartMap.value[cart.$id] = true;
 //       });
 //     }
 //   } catch (error) {
@@ -159,6 +131,17 @@ const getIsCart = async () => {
 //   }
 // };
 
+const removeFromCart = async (id: string) => {
+  try {
+    await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
+    carts.value = carts.value.filter((cart) => cart.$id !== id);
+    delete cartMap.value[id];
+    total.value = carts.value.length;
+    getIsFavorite();
+  } catch (error) {
+    console.error("Error deleting blog:", error);
+  }
+};
 // Check if a meal is in favorites
 const checkIsCart = (mealId: string) => {
   return cartMap.value[mealId] || false; // Return false if not found
@@ -197,7 +180,7 @@ const makeFavorite = async (meal: IMeals) => {
 
   try {
     if (IMealFavorite) {
-      await cDStore.removeFavorite(meal.$id); // Remove from favorites
+      await removeStore.removeFromFavorite(meal.$id); // Remove from favorites
     } else {
       await cDStore.addFavorite(meal.$id); // Add to favorites
     }
@@ -282,25 +265,25 @@ const makeFavorite = async (meal: IMeals) => {
 // Initial loading of data
 onMounted(() => {
   getItems();
-  getIsCart();
+
   getIsFavorite();
   console.log(carts);
 });
 
 watch(
-  () => carts.value.length,
+  () => carts,
   async () => {
     await setTimeout(() => {
-      getIsCart();
       getIsFavorite();
     }, 1500);
+    console.log(carts);
   }
 );
-const setTimeoutFunction = async () => {
-  await setTimeout(() => {
-    getIsCart();
-  }, 1500);
-};
+// const setTimeoutFunction = async () => {
+//   await setTimeout(() => {
+//     getIsCart();
+//   }, 1500);
+// };
 </script>
 
 <template>
@@ -332,66 +315,57 @@ const setTimeoutFunction = async () => {
     </div>
 
     <div class="py-10"></div>
-    <div v-if="carts.length > 0" class="max-w-[95%] mx-auto relative">
-      <Carousel>
-        <div class="absolute -top-5 right-20">
-          <CarouselPrevious />
-          <CarouselNext />
-        </div>
-        <CarouselContent>
-          <CarouselItem
-            v-for="cart in carts"
-            :key="cart.$id"
-            class="basis-1/3"
-            :wrap-around="true"
-          >
-            <div
-              v-if="cart.user === cDStore.user.email"
-              class="w-full h-full flex flex-col items-center justify-between"
-            >
-              <div class="w-full flex flex-col items-center">
-                <p>{{ cart.name }}</p>
-                <p>{{ cart.price }}</p>
-              </div>
-              <img :src="cart.image" alt="Meal image" />
+    <div v-if="data?.length === 0">Add something to your cart</div>
+    <div v-else class="flex flex-wrap">
+      <div
+        v-for="cart in data"
+        :key="cart.$id"
+        class="basis-1/3"
+        :wrap-around="true"
+      >
+        <div
+          v-if="cart.user === cDStore.user.email"
+          class="w-full h-full flex flex-col items-center justify-between"
+        >
+          <div class="w-full flex flex-col items-center">
+            <p>{{ cart.name }}</p>
+            <p>{{ cart.price }}</p>
+          </div>
+          <img :src="cart.image" alt="Meal image" />
 
-              <div class="flex gap-4 p-2">
-                <button
-                  @click="makeFavorite(cart)"
-                  class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-                >
-                  <Icon
-                    :name="
-                      checkIsFavorite(cart.$id)
-                        ? 'radix-icons:heart-filled'
-                        : 'radix-icons:heart'
-                    "
-                    class="w-5 h-5 text-bold"
-                  />
-                </button>
-                <button @click="makeCart(cart)">
-                  <div
-                    class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-                  >
-                    <Icon
-                      @click="
-                        async () => {
-                          await cDStore.removeFromCart(cart.$id);
-                          setTimeoutFunction();
-                        }
-                      "
-                      :name="'ion:cart'"
-                      class="w-5 h-5 text-bold"
-                    />
-                  </div>
-                </button>
+          <div class="flex gap-4 p-2">
+            <button
+              @click="makeFavorite(cart)"
+              class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+            >
+              <Icon
+                :name="
+                  checkIsFavorite(cart.$id)
+                    ? 'radix-icons:heart-filled'
+                    : 'radix-icons:heart'
+                "
+                class="w-5 h-5 text-bold"
+              />
+            </button>
+            <button @click="makeCart(cart)">
+              <div
+                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+              >
+                <Icon
+                  @click="
+                    async () => {
+                      await removeStore.removeFromCart(cart.$id);
+                    }
+                  "
+                  :name="'ion:cart'"
+                  class="w-5 h-5 text-bold"
+                />
               </div>
-            </div>
-          </CarouselItem>
-        </CarouselContent>
-      </Carousel>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div v-else>Add something to your cart</div>
     <div class="py-20"></div>
   </section>
 </template>

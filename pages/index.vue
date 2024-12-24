@@ -14,6 +14,8 @@ import { v4 as uuid } from "uuid";
 import { useForm } from "vee-validate";
 import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
+import { useCreateMeal } from "~/composables/useCreateMeal";
+import { useGetMeals } from "~/composables/useGetMeals";
 
 import {
   Carousel,
@@ -22,6 +24,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+
+// composables
+const { mutate, isPending, isError } = useCreateMeal();
+const { data, isLoading, isError: isErrorGet } = useGetMeals();
+
+const createMeal = () => {
+  const mealU = {
+    name: "New Meal",
+    price: 0,
+    image:
+      "https://cloud.appwrite.io/v1/storage/buckets/shop-bucket/files/2bc08d06-aca5-4b11-a360-274b53d1f4a2/view?project=crm-nuxt-shop&project=crm-nuxt-shop&mode=admin",
+  };
+
+  mutate(mealU);
+};
 
 // store
 const cDStore = useFavoritesStore();
@@ -40,31 +57,31 @@ const cartMap = ref<{ [mealId: string]: boolean }>({});
 const isProcessing = ref(false);
 
 // Fetch meals
-const getItems = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No meals available.";
-    } else {
-      meals.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+// const getItems = async () => {
+//   try {
+//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+//     if (response.documents.length === 0) {
+//       errorMessage.value = "No meals available.";
+//     } else {
+//       meals.value = response.documents.map((document) => ({
+//         $id: document.$id,
+//         name: document.name,
+//         price: document.price,
+//         $createdAt: document.$createdAt,
+//         image: document.image,
+//       })) as IMeals[];
 
-      meals.value.sort((a, b) => {
-        const dateA = new Date(a.$createdAt);
-        const dateB = new Date(b.$createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching meals:", error);
-    errorMessage.value = "An error occurred while fetching meals.";
-  }
-};
+//       // meals.value.sort((a, b) => {
+//       //   const dateA = new Date(a.$createdAt);
+//       //   const dateB = new Date(b.$createdAt);
+//       //   return dateB.getTime() - dateA.getTime();
+//       // });
+//     }
+//   } catch (error) {
+//     console.error("Error fetching meals:", error);
+//     errorMessage.value = "An error occurred while fetching meals.";
+//   }
+// };
 
 // Fetch favorites and update favorite map
 const getIsFavorite = async () => {
@@ -83,7 +100,7 @@ const getIsFavorite = async () => {
           image: document.image,
           mealId: document.mealId,
         })) as IMeals[];
-
+      console.log(favorites.value);
       // Populate the favoriteMap with the current favorite status
       favorites.value.forEach((meal) => {
         favoriteMap.value[meal.mealId] = true;
@@ -95,6 +112,28 @@ const getIsFavorite = async () => {
   }
 };
 
+const getFavoriteItems = async () => {
+  try {
+    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+    if (response.documents.length === 0) {
+      console.log("No items available.");
+    } else {
+      const allItems = response.documents
+        .filter((document) => document.user === cDStore.user.email)
+        .map((document) => ({
+          $id: document.$id,
+          name: document.name,
+          price: document.price,
+          $createdAt: document.$createdAt,
+          image: document.image,
+          mealId: document.mealId,
+        }));
+      console.log(allItems); // This will log the array of all items
+    }
+  } catch (error) {
+    console.error("Error fetching items:", error);
+  }
+};
 const getIsCart = async () => {
   try {
     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
@@ -137,8 +176,14 @@ const makeFavorite = async (meal: IMeals) => {
   try {
     if (IMealFavorite) {
       await cDStore.removeFavorite(meal.$id); // Remove from favorites
+      // Remove the specific meal from the favorites array
+      favorites.value = favorites.value.filter(
+        (favorite) => favorite.mealId !== meal.$id
+      );
     } else {
       await cDStore.addFavorite(meal.$id); // Add to favorites
+      // Add the new favorite to the favorites array
+      favorites.value.push(meal);
     }
 
     // Toggle the local state of the favorite map after operation
@@ -185,18 +230,21 @@ const resetState = () => {
 };
 const refetch = () => {
   resetState();
-  getItems();
+  // getItems();
   getIsFavorite();
   getIsCart();
 };
+
+const onCheck = () => {};
 
 // Handle file change
 
 // Initial loading of data
 onMounted(() => {
-  getItems();
+  // getItems();
   getIsFavorite();
   getIsCart();
+  getFavoriteItems();
 });
 watch(
   () => cDStore.user,
@@ -220,7 +268,7 @@ watch(
       </div>
       <CarouselContent>
         <CarouselItem
-          v-for="meal in meals"
+          v-for="meal in data"
           :key="meal.$id"
           class="basis-1/3"
           :wrap-around="true"
@@ -267,7 +315,7 @@ watch(
       </CarouselContent>
     </Carousel>
   </div>
-  <button @click="refetch">Refetch</button>
+
   <div class="py-40"></div>
 </template>
 

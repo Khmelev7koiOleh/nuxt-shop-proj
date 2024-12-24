@@ -1,34 +1,7 @@
-<template>
-  <LayoutLoader v-if="isLoadingStore.isLoading" />
-  <section v-if="!isLoading" class="min-h-screen flex flex-col md:flex-row">
-    <!-- Sidebar for medium and larger screens -->
-    <aside
-      v-if="store.isAuth"
-      class="md:block fixed top-0 left-0 z-10 w-[70px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
-    >
-      <LayoutSidebar />
-
-      <button
-        @click="logout"
-        class="absolute bottom-4 right-0 w-full flex items-center justify-center gap-2 text-white text-xl hover:text-gray-500 transition duration-300"
-      >
-        <div>Logout</div>
-        <Icon name="line-md:logout" size="25" />
-      </button>
-    </aside>
-
-    <!-- Main Content -->
-    <div :class="[{ 'md:ml-[200px] ml-[70px]': store.isAuth }, 'flex-1']">
-      <slot />
-    </div>
-  </section>
-</template>
-
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { account } from "~/lib/appwrite";
-import { DB } from "~/lib/appwrite";
+import { account, DB } from "~/lib/appwrite";
 import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
 import { useFavoritesStore } from "~/store/createDocument.store";
 import {
@@ -39,17 +12,19 @@ import {
 } from "~/app.constants";
 import type { IMeals } from "~/types/order.types";
 
+// Stores
 const store = useAuthStore();
 const isLoadingStore = useIsLoadingStore();
 const cDStore = useFavoritesStore();
 const router = useRouter();
 
+// Reactive Variables
 const isLoading = ref(true);
 const meals = ref<IMeals[]>([]);
 const favorites = ref<IMeals[]>([]);
 const carts = ref<IMeals[]>([]);
-const favoriteMap = ref<{ [mealId: string]: boolean }>({});
-const cartMap = ref<{ [mealId: string]: boolean }>({});
+const favoriteMap = ref<Record<string, boolean>>({});
+const cartMap = ref<Record<string, boolean>>({});
 const errorMessage = ref<string | null>(null);
 
 // Logout function
@@ -60,6 +35,7 @@ const logout = async () => {
     router.push("/login");
   } catch (error) {
     console.error("Logout failed:", error);
+    errorMessage.value = "Logout failed. Please try again.";
   }
 };
 
@@ -123,8 +99,10 @@ const fetchCarts = async () => {
 
 // Initialize data
 const initializeData = async () => {
+  console.log("Initializing data...");
   try {
     const user = await account.get();
+    console.log("User fetched:", user);
     store.set({ email: user.email, name: user.name, status: true });
     await Promise.all([fetchMeals(), fetchFavorites(), fetchCarts()]);
     isLoading.value = false;
@@ -133,7 +111,19 @@ const initializeData = async () => {
     router.push("/login");
   }
 };
+const restartSession = async (email: string, password: string) => {
+  try {
+    // Delete the current session
+    await account.deleteSession("current");
+    console.log("Session deleted successfully.");
 
+    // Log the user back in
+    await account.createSession(email, password);
+    console.log("New session created successfully.");
+  } catch (error) {
+    console.error("Failed to restart session:", error);
+  }
+};
 // Watch for authentication changes
 watch(
   () => store.isAuth,
@@ -147,3 +137,36 @@ onMounted(async () => {
   await initializeData();
 });
 </script>
+
+<template>
+  <!-- Loader -->
+  <LayoutLoader v-if="isLoadingStore.isLoading" />
+
+  <!-- Main Layout -->
+  <section v-if="!isLoading" class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar for authenticated users -->
+    <aside
+      v-if="store.isAuth"
+      class="md:block fixed top-0 left-0 z-10 w-[70px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
+    >
+      <LayoutSidebar />
+
+      <button
+        @click="logout"
+        class="absolute bottom-4 right-0 w-full flex items-center justify-center gap-2 text-white text-xl hover:text-gray-500 transition duration-300"
+      >
+        <div>Logout</div>
+        <Icon name="line-md:logout" size="25" />
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <div :class="[{ 'md:ml-[200px] ml-[70px]': store.isAuth }, 'flex-1']">
+      <slot />
+    </div>
+  </section>
+</template>
+
+<style scoped>
+/* Add custom styles if needed */
+</style>

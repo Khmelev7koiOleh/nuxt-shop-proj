@@ -138,32 +138,6 @@ const getIsCart = async () => {
   }
 };
 
-// Fetch favorites and update favorite map
-// const getIsFavorite = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No favorites available.";
-//     } else {
-//       favorites.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//       })) as IMeals[];
-
-//       // Populate the favoriteMap with the current favorite status
-//       favorites.value.forEach((meal) => {
-//         favoriteMap.value[meal.$id] = true;
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching favorites:", error);
-//     errorMessage.value = "An error occurred while fetching favorites.";
-//   }
-// };
-
 // Check if a meal is in favorites
 const checkIsCart = (mealId: string) => {
   return cartMap.value[mealId] || false; // Return false if not found
@@ -268,6 +242,7 @@ const transferCartToOrders = async () => {
     onOrderSuccess.value = false;
     setTimeout(() => {
       orderIsCompleted.value = false;
+      router.push("/orders");
     }, 1500);
   }
 };

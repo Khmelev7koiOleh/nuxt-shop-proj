@@ -13,6 +13,9 @@ import { useMutation } from "@tanstack/vue-query";
 import { v4 as uuid } from "uuid";
 import { useForm } from "vee-validate";
 import type { IMeals } from "~/types/order.types";
+import { useCreateMeal } from "~/composables/useCreateMeal";
+import { useGetMeals } from "~/composables/useGetMeals";
+import { useDeleteMeal } from "~/composables/useDeleteMeal";
 
 // Refs for form and state management
 const nameRef = ref("");
@@ -27,6 +30,13 @@ const filteredOrders = ref<IMeals[]>([]); // For filtered orders
 const onOpen = ref(false);
 const isAdmin = ref(false);
 
+const { data, isLoading: isLoadingGet, isError: isErrorGet } = useGetMeals();
+const {
+  mutate,
+  isPending: isPendingDelete,
+  isError: isErrorDelete,
+} = useDeleteMeal();
+
 // Admin check
 const ifAdmin = async () => {
   const user = await account.get();
@@ -38,37 +48,37 @@ const ifAdmin = async () => {
 };
 
 // Fetch items from DB
-const getItems = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No products available.";
-    } else {
-      orders.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-        category: document.category,
-      })) as IMeals[];
+// const getItems = async () => {
+//   try {
+//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+//     if (response.documents.length === 0) {
+//       errorMessage.value = "No products available.";
+//     } else {
+//       orders.value = response.documents.map((document) => ({
+//         $id: document.$id,
+//         name: document.name,
+//         price: document.price,
+//         $createdAt: document.$createdAt,
+//         image: document.image,
+//         category: document.category,
+//       })) as IMeals[];
 
-      orders.value.sort((a, b) => {
-        const dateA = new Date(a.$createdAt);
-        const dateB = new Date(b.$createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
+//       orders.value.sort((a, b) => {
+//         const dateA = new Date(a.$createdAt);
+//         const dateB = new Date(b.$createdAt);
+//         return dateB.getTime() - dateA.getTime();
+//       });
 
-      // Initialize filteredOrders with all items
-      filteredOrders.value = [...orders.value];
-    }
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    errorMessage.value = "An error occurred while fetching products.";
-  } finally {
-    isLoading.value = false;
-  }
-};
+//       // Initialize filteredOrders with all items
+//       filteredOrders.value = [...orders.value];
+//     }
+//   } catch (error) {
+//     console.error("Error fetching products:", error);
+//     errorMessage.value = "An error occurred while fetching products.";
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
 
 // Handle filtering of orders
 const handleUpdateOrders = (updatedOrders: IMeals[]) => {
@@ -135,7 +145,7 @@ const mutation = useMutation({
   onSuccess: () => {
     console.log("Meal created successfully.");
     resetForm();
-    getItems(); // Refresh meals
+    // getItems(); // Refresh meals
   },
   onError: (error) => {
     console.error("Error creating meal:", error);
@@ -150,21 +160,37 @@ const onSubmit = handleSubmit(() => {
 });
 
 // Delete order
-const deleteOrder = async (id: string) => {
-  try {
-    await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
-    await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
-    await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
+// const deleteOrder = async (id: string) => {
+//   try {
+//     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
+//     await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
+//     await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
 
-    getItems(); // Refresh items after deletion
-  } catch (error) {
-    console.error("Error deleting order:", error);
-  }
+//     getItems(); // Refresh items after deletion
+//   } catch (error) {
+//     console.error("Error deleting order:", error);
+//   }
+// };
+// const deleteOrder = async (id: string) => {
+//   try {
+//     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
+//     await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
+//     await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
+
+//     // getItems(); // Refresh items after deletion
+//   } catch (error) {
+//     console.error("Error deleting order:", error);
+//   }
+// };
+
+const deleteOrder = (mealId: string) => {
+  mutate(mealId);
+  console.log(mealId);
 };
 
 // Initialize onMounted lifecycle
 onMounted(async () => {
-  await getItems();
+  // await getItems();
   ifAdmin();
 });
 </script>
@@ -229,7 +255,7 @@ onMounted(async () => {
 
   <div class="max-w-[95%] mx-auto flex flex-wrap my-10">
     <UiCard
-      v-for="order in filteredOrders"
+      v-for="order in data"
       :key="order.$id"
       class="basis-1/4"
       :wrap-around="true"

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, onMounted } from "vue";
+import { Query } from "appwrite";
 import {
   DB_ID,
   COLLECTION_FAVORITES,
@@ -64,41 +65,23 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   };
 
-  // Add meal to favorites
-  const addToCart = async (mealId: string) => {
-    isLoading.value = true;
-    errorMessage.value = null; // Reset error message on add start
-
-    try {
-      // Fetch the meal to ensure it's valid
-      const mealDoc = await DB.getDocument(DB_ID, COLLECTION_MEALS, mealId);
-      if (!mealDoc) throw new Error("Meal not found");
-
-      const newFavorite = {
-        name: mealDoc.name,
-        price: mealDoc.price,
-        image: mealDoc.image,
-        user: user.value.email,
-        $createdAt: new Date().toISOString(),
-        mealId: mealId,
-      };
-
-      // Create a new favorite document
-      await DB.createDocument(DB_ID, COLLECTION_CART, uuid(), newFavorite);
-
-      // Refresh the favorites list
-      await fetchCartItems();
-    } catch (error) {
-      handleError("Failed to add to favorites.", error);
-    } finally {
-      isLoading.value = false;
-    }
-  };
   const addFavorite = async (mealId: string) => {
     isLoading.value = true;
-    errorMessage.value = null; // Reset error message on add start
+    errorMessage.value = null;
 
     try {
+      // Check if the meal is already favorited by the user
+      const existingFavorites = await DB.listDocuments(
+        DB_ID,
+        COLLECTION_FAVORITES,
+        [Query.equal("mealId", mealId), Query.equal("user", user.value.email)]
+      );
+
+      if (existingFavorites.documents.length > 0) {
+        console.log("Meal already favorited by this user.");
+        return; // Avoid duplicating the favorite
+      }
+
       // Fetch the meal to ensure it's valid
       const mealDoc = await DB.getDocument(DB_ID, COLLECTION_MEALS, mealId);
       if (!mealDoc) throw new Error("Meal not found");
@@ -111,8 +94,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
         $createdAt: new Date().toISOString(),
         mealId: mealId,
       };
-      console.log(newFavorite.mealId);
-      // Create a new favorite document
+
       await DB.createDocument(DB_ID, COLLECTION_FAVORITES, uuid(), newFavorite);
 
       // Refresh the favorites list
@@ -124,34 +106,36 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   };
 
-  const removeFavorite = async (fav: string) => {
+  const removeFavorite = async (mealId: string) => {
     isLoading.value = true;
     errorMessage.value = null;
 
     try {
-      //   const favoriteToRemove = favorites.value.find(
-      //     (favorite) => favorite.$id === fav
-      //   );
+      // Find the specific favorite for the current user
+      const favoriteToRemove = await DB.listDocuments(
+        DB_ID,
+        COLLECTION_FAVORITES,
+        [Query.equal("mealId", mealId), Query.equal("user", user.value.email)]
+      );
 
-      //   console.log("Attempting to remove favorite with ID:", fav);
-      //   if (!favoriteToRemove) {
-      //     console.error("Favorite not found for deletion:", fav);
-      //     errorMessage.value = "Favorite not found.";
-      //     return;
-      //   }
-      console.log(`Attempting to remove favorite with ID: ${fav}`);
+      if (favoriteToRemove.documents.length === 0) {
+        console.error("Favorite not found for deletion:", mealId);
+        errorMessage.value = "Favorite not found.";
+        return;
+      }
 
       // Proceed with deleting the document
-      await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, fav);
+      const favoriteId = favoriteToRemove.documents[0].$id;
+      await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, favoriteId);
 
       // Update local state
       favorites.value = favorites.value.filter(
-        (favorite) => favorite.$id !== fav
+        (favorite) => favorite.mealId !== mealId
       );
 
-      console.log(`Successfully removed favorite with ID: ${fav}`);
+      console.log(`Successfully removed favorite with ID: ${favoriteId}`);
     } catch (error: any) {
-      console.error(`Error removing favorite with ID: ${fav}`, error);
+      console.error(`Error removing favorite with ID: ${mealId}`, error);
       if (error?.message?.includes("Invalid `documentId` param")) {
         errorMessage.value = "Invalid favorite ID.";
       } else if (error?.message?.includes("Document not found")) {
@@ -165,34 +149,75 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   };
 
-  const removeFromCart = async (cart: string) => {
+  const addToCart = async (mealId: string) => {
     isLoading.value = true;
     errorMessage.value = null;
 
     try {
-      //   const favoriteToRemove = favorites.value.find(
-      //     (favorite) => favorite.$id === fav
-      //   );
+      // Check if the meal is already in the cart for the user
+      const existingCartItems = await DB.listDocuments(DB_ID, COLLECTION_CART, [
+        Query.equal("mealId", mealId),
+        Query.equal("user", user.value.email),
+      ]);
 
-      //   console.log("Attempting to remove favorite with ID:", fav);
-      //   if (!favoriteToRemove) {
-      //     console.error("Favorite not found for deletion:", fav);
-      //     errorMessage.value = "Favorite not found.";
-      //     return;
-      //   }
-      console.log(`Attempting to remove favorite with ID: ${cart}`);
+      if (existingCartItems.documents.length > 0) {
+        console.log("Meal already in cart for this user.");
+        return; // Avoid duplicating the cart item
+      }
+
+      // Fetch the meal to ensure it's valid
+      const mealDoc = await DB.getDocument(DB_ID, COLLECTION_MEALS, mealId);
+      if (!mealDoc) throw new Error("Meal not found");
+
+      const newCartItem = {
+        name: mealDoc.name,
+        price: mealDoc.price,
+        image: mealDoc.image,
+        user: user.value.email,
+        $createdAt: new Date().toISOString(),
+        mealId: mealId,
+      };
+
+      await DB.createDocument(DB_ID, COLLECTION_CART, uuid(), newCartItem);
+
+      // Optionally refresh the cart list or update local state
+      console.log("Meal added to cart:", newCartItem);
+    } catch (error) {
+      handleError("Failed to add meal to cart.", error);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const removeFromCart = async (mealId: string) => {
+    isLoading.value = true;
+    errorMessage.value = null;
+
+    try {
+      // Find the specific favorite for the current user
+      const favoriteToRemove = await DB.listDocuments(DB_ID, COLLECTION_CART, [
+        Query.equal("mealId", mealId),
+        Query.equal("user", user.value.email),
+      ]);
+
+      if (favoriteToRemove.documents.length === 0) {
+        console.error("Favorite not found for deletion:", mealId);
+        errorMessage.value = "Favorite not found.";
+        return;
+      }
 
       // Proceed with deleting the document
-      await DB.deleteDocument(DB_ID, COLLECTION_CART, cart);
+      const favoriteId = favoriteToRemove.documents[0].$id;
+      await DB.deleteDocument(DB_ID, COLLECTION_CART, favoriteId);
 
       // Update local state
       favorites.value = favorites.value.filter(
-        (favorite) => favorite.$id !== cart
+        (favorite) => favorite.mealId !== mealId
       );
 
-      console.log(`Successfully removed favorite with ID: ${cart}`);
+      console.log(`Successfully removed favorite with ID: ${favoriteId}`);
     } catch (error: any) {
-      console.error(`Error removing favorite with ID: ${cart}`, error);
+      console.error(`Error removing favorite with ID: ${mealId}`, error);
       if (error?.message?.includes("Invalid `documentId` param")) {
         errorMessage.value = "Invalid favorite ID.";
       } else if (error?.message?.includes("Document not found")) {

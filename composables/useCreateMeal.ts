@@ -1,0 +1,28 @@
+import { ref, onMounted } from "vue";
+
+import {
+  DB_ID,
+  COLLECTION_MEALS,
+  COLLECTION_FAVORITES,
+  STORAGE_ID,
+  COLLECTION_CART,
+} from "@/app.constants";
+import { DB, storage } from "@/lib/appwrite";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { v4 as uuid } from "uuid";
+import { useForm } from "vee-validate";
+import type { IMeals } from "~/types/order.types";
+import { useFavoritesStore } from "~/store/createDocument.store";
+
+export function useCreateMeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["create-meal"],
+    mutationFn: async (meal: IMeals) => {
+      return await DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), meal);
+    },
+    onSuccess() {
+      queryClient.invalidateQueries(["meals"]);
+    },
+  });
+}

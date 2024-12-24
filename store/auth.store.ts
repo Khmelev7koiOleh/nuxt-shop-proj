@@ -1,37 +1,46 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+
+// Interface for user data
 interface IAuthStore {
   email: string;
   status: boolean;
   name: string;
 }
-const defaultValues: { user: IAuthStore } = {
+
+// Function to return the default state
+const getDefaultAuthState = (): { user: IAuthStore } => ({
   user: {
     email: "",
     status: false,
     name: "",
   },
-};
+});
 
+// Auth Store
 export const useAuthStore = defineStore("auth", {
-  state: () => defaultValues,
+  state: (): { user: IAuthStore } => getDefaultAuthState(),
 
   getters: {
     isAuth: (state) => state.user.status,
   },
   actions: {
     clear() {
-      this.$patch(defaultValues);
+      this.$patch(getDefaultAuthState());
     },
 
-    set(input: IAuthStore) {
+    set(input: Partial<IAuthStore>) {
       this.$patch({
-        user: input,
+        user: {
+          ...this.user,
+          ...input,
+        },
       });
     },
   },
 });
 
+// Loading State Store
 export const useIsLoadingStore = defineStore("isLoading", {
   state: () => ({
     isLoading: true,
@@ -43,22 +52,22 @@ export const useIsLoadingStore = defineStore("isLoading", {
   },
 });
 
+// Sidebar State Store
 export const useIsSidebarOpenStore = defineStore("isSidebarOpen", {
   state: () => ({
     isSidebarOpen: false,
   }),
   actions: {
-    // Set the sidebar open state (true or false)
+    // Set the sidebar open state
     set(data: boolean) {
       this.$patch({ isSidebarOpen: data });
     },
     // Toggle the sidebar state
     toggle() {
-      this.isSidebarOpen = !this.isSidebarOpen;
+      this.$patch({ isSidebarOpen: !this.isSidebarOpen });
     },
   },
   getters: {
-    // Getter to check if the sidebar is open
     isOpen: (state) => state.isSidebarOpen,
   },
 });
