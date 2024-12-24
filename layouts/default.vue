@@ -20,6 +20,8 @@ import type { IMeals } from "~/types/order.types";
 const { mutate: loginMutate } = useLogin();
 const { mutate: registerMutate } = useRegister();
 
+const backup = ref(false);
+
 // Example usage:
 
 useSeoMeta({
@@ -179,42 +181,44 @@ onMounted(async () => {
     </div>
   </section>
 
-  <form v-if="true">
-    <UiInput
-      v-model="emailRef"
-      placeholder="Email"
-      type="email"
-      class="mb-4 placeholder:text-gray-300 text-white"
-    />
-    <UiInput
-      v-model="passwordRef"
-      placeholder="Password"
-      type="password"
-      class="mb-4 placeholder:text-gray-300 text-white"
-    />
-    <!-- Only show name input for registration -->
-    <UiInput
-      v-if="!authStore.isAuth"
-      v-model="nameRef"
-      placeholder="Name"
-      type="text"
-      class="mb-4 placeholder:text-gray-300 text-white"
-    />
-    <div class="flex justify-center items-center gap-5">
-      <UiButton
-        type="button"
-        class="bg-gray-800 text-white rounded hover:bg-gray-700"
-        @click="login"
-        >Login</UiButton
-      >
-      <UiButton
-        type="button"
-        class="bg-gray-800 text-white rounded hover:bg-gray-700"
-        @click="register"
-        >Register</UiButton
-      >
-    </div>
-  </form>
+  <div v-if="!authStore.isAuth && backup">
+    <form class="flex flex-col items-center justify-center">
+      <UiInput
+        v-model="emailRef"
+        placeholder="Email"
+        type="email"
+        class="mb-4 placeholder:text-gray-300 text-black"
+      />
+      <UiInput
+        v-model="passwordRef"
+        placeholder="Password"
+        type="password"
+        class="mb-4 placeholder:text-gray-300 text-black"
+      />
+      <!-- Only show name input for registration -->
+      <UiInput
+        v-if="!authStore.isAuth"
+        v-model="nameRef"
+        placeholder="Name"
+        type="text"
+        class="mb-4 placeholder:text-gray-300 text-black"
+      />
+      <div class="flex justify-center items-center gap-5">
+        <UiButton
+          type="button"
+          class="bg-gray-800 text-black rounded hover:bg-gray-700"
+          @click="login"
+          >Login</UiButton
+        >
+        <UiButton
+          type="button"
+          class="bg-gray-800 text-black rounded hover:bg-gray-700"
+          @click="register"
+          >Register</UiButton
+        >
+      </div>
+    </form>
+  </div>
 </template>
 
 <style scoped>

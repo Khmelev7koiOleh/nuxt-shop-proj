@@ -14,6 +14,7 @@ import { useRegister } from "~/composables/useRegister";
 const { mutate: loginMutate } = useLogin();
 const { mutate: registerMutate } = useRegister();
 
+const backup = ref(false);
 // Example usage:
 
 useSeoMeta({
@@ -85,7 +86,7 @@ const errorMessage = ref<string | null>(null);
 //   }
 // };
 onMounted(() => {
-  if (authStore.isAuth) {
+  if (performance.navigation.type === 1) {
     isSidebarOpen.set(true);
   }
 });

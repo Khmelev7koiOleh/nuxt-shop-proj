@@ -51,7 +51,6 @@ export function useLogin() {
       isLoadingStore.set(false);
 
       router.push("/"); // Redirect to the home page after successful login
-      window.location.reload();
     },
     onError(error) {
       console.error("Login error:", error);
@@ -98,7 +97,6 @@ export function useUpdateCard() {
     },
     onSuccess() {
       isLoadingStore.set(false);
-      router.push("/profile"); // Redirect to the profile page after successful card update
     },
     onError(error) {
       console.error("Card update error:", error);

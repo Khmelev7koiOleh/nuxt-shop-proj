@@ -241,10 +241,6 @@ onMounted(() => {
   fetchMeals();
   fetchFavorites();
   fetchCart();
-
-  setTimeout(() => {
-    router.push("/products");
-  }, 1000);
 });
 </script>
 
