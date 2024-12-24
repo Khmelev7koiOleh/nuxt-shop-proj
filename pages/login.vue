@@ -7,10 +7,29 @@ import {
 import { v4 as uuid } from "uuid";
 import { useSeoMeta, useRouter, ref, watch } from "#imports";
 import { account } from "~/lib/appwrite";
+import { useMutation } from "@tanstack/vue-query";
+import { useLogin } from "~/composables/useLogin";
+import { useRegister } from "~/composables/useRegister";
+
+const { mutate: loginMutate } = useLogin();
+const { mutate: registerMutate } = useRegister();
+
+// Example usage:
 
 useSeoMeta({
   title: "Login",
 });
+const login = () => {
+  loginMutate({ email: emailRef.value, password: passwordRef.value });
+};
+
+const register = () => {
+  registerMutate({
+    email: emailRef.value,
+    password: passwordRef.value,
+    name: nameRef.value,
+  });
+};
 
 const isSidebarOpen = useIsSidebarOpenStore();
 const emailRef = ref("");
@@ -23,48 +42,48 @@ const router = useRouter();
 const errorMessage = ref<string | null>(null);
 
 // Function to handle login
-const login = async () => {
-  try {
-    isLoadingStore.set(true);
-    await account.createEmailPasswordSession(emailRef.value, passwordRef.value);
+// const login = async () => {
+//   try {
+//     isLoadingStore.set(true);
+//     await account.createEmailPasswordSession(emailRef.value, passwordRef.value);
 
-    const response = await account.get();
-    if (response) {
-      authStore.set({
-        email: response.email,
-        status: true,
-        name: response.name,
-      });
-      isSidebarOpen.set(true);
-      await router.push("/");
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    errorMessage.value = "Login failed. Please check your credentials.";
-  } finally {
-    isLoadingStore.set(false);
-  }
-};
+//     const response = await account.get();
+//     if (response) {
+//       authStore.set({
+//         email: response.email,
+//         status: true,
+//         name: response.name,
+//       });
+//       isSidebarOpen.set(true);
+//       await router.push("/");
+//     }
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     errorMessage.value = "Login failed. Please check your credentials.";
+//   } finally {
+//     isLoadingStore.set(false);
+//   }
+// };
 
-// Function to handle registration
-const register = async () => {
-  try {
-    isLoadingStore.set(true);
-    await account.create(
-      uuid(),
-      emailRef.value,
-      passwordRef.value,
-      nameRef.value
-    );
-    await login();
-    isSidebarOpen.set(true);
-  } catch (error) {
-    console.error("Registration error:", error);
-    errorMessage.value = "Registration failed. Please try again.";
-  } finally {
-    isLoadingStore.set(false);
-  }
-};
+// // Function to handle registration
+// const register = async () => {
+//   try {
+//     isLoadingStore.set(true);
+//     await account.create(
+//       uuid(),
+//       emailRef.value,
+//       passwordRef.value,
+//       nameRef.value
+//     );
+//     await login();
+//     isSidebarOpen.set(true);
+//   } catch (error) {
+//     console.error("Registration error:", error);
+//     errorMessage.value = "Registration failed. Please try again.";
+//   } finally {
+//     isLoadingStore.set(false);
+//   }
+// };
 
 // Watcher for debugging (optional)
 watch(isSidebarOpen, () => {

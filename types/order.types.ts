@@ -8,6 +8,9 @@ export interface IMeals {
   category?: string;
   $createdAt: string;
   $id: string;
+  email?: string;
+  password?: string;
+  cardDetails?: string;
 }
 
 // export interface IFavorites extends IBaseField {

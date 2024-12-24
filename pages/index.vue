@@ -1,90 +1,69 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-
+import { ref, onMounted, watch } from "vue";
 import {
   DB_ID,
   COLLECTION_MEALS,
   COLLECTION_FAVORITES,
-  STORAGE_ID,
   COLLECTION_CART,
 } from "@/app.constants";
-import { DB, storage } from "@/lib/appwrite";
+import { DB } from "@/lib/appwrite";
 import { useMutation } from "@tanstack/vue-query";
-import { v4 as uuid } from "uuid";
-import { useForm } from "vee-validate";
-import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
 import { useCreateMeal } from "~/composables/useCreateMeal";
 import { useGetMeals } from "~/composables/useGetMeals";
+import type { IMeals } from "~/types/order.types";
+import { v4 as uuid } from "uuid";
+import { Carousel } from "~/components/ui/carousel";
+import { CarouselContent } from "~/components/ui/carousel";
+import { CarouselItem } from "~/components/ui/carousel";
+import { CarouselNext } from "~/components/ui/carousel";
+import { CarouselPrevious } from "~/components/ui/carousel";
+import { useGetFavorites } from "~/composables/useGetFavorites";
+import { useGetCarts } from "~/composables/useGetCarts";
+import { useAuthStore } from "~/store/auth.store";
+import { fetchUserData } from "~/composables/fetchUserData"; // Import the function
+import type { IAuthStore } from "~/store/auth.store";
+import { set } from "@vueuse/core";
+import { useRouter } from "vue-router";
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
-// composables
+// Composables
 const { mutate, isPending, isError } = useCreateMeal();
 const { data, isLoading, isError: isErrorGet } = useGetMeals();
-
-const createMeal = () => {
-  const mealU = {
-    name: "New Meal",
-    price: 0,
-    image:
-      "https://cloud.appwrite.io/v1/storage/buckets/shop-bucket/files/2bc08d06-aca5-4b11-a360-274b53d1f4a2/view?project=crm-nuxt-shop&project=crm-nuxt-shop&mode=admin",
-  };
-
-  mutate(mealU);
-};
-
-// store
 const cDStore = useFavoritesStore();
+
 // Input references and error handling
-
 const errorMessage = ref<string | null>(null);
-
 const meals = ref<IMeals[]>([]);
 const favorites = ref<IMeals[]>([]);
 const carts = ref<IMeals[]>([]);
-
+const router = useRouter();
 const favoriteMap = ref<{ [mealId: string]: boolean }>({});
 const cartMap = ref<{ [mealId: string]: boolean }>({});
 
-// Loading and async state
 const isProcessing = ref(false);
 
-// Fetch meals
-// const getItems = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No meals available.";
-//     } else {
-//       meals.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//       })) as IMeals[];
+// Fetch meals, favorites, and cart
+const fetchMeals = async () => {
+  try {
+    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+    if (response.documents.length === 0) {
+      errorMessage.value = "No meals available.";
+    } else {
+      meals.value = response.documents.map((document) => ({
+        $id: document.$id,
+        name: document.name,
+        price: document.price,
+        $createdAt: document.$createdAt,
+        image: document.image,
+      })) as IMeals[];
+    }
+  } catch (error) {
+    console.error("Error fetching meals:", error);
+    errorMessage.value = "An error occurred while fetching meals.";
+  }
+};
 
-//       // meals.value.sort((a, b) => {
-//       //   const dateA = new Date(a.$createdAt);
-//       //   const dateB = new Date(b.$createdAt);
-//       //   return dateB.getTime() - dateA.getTime();
-//       // });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching meals:", error);
-//     errorMessage.value = "An error occurred while fetching meals.";
-//   }
-// };
-
-// Fetch favorites and update favorite map
-const getIsFavorite = async () => {
+const fetchFavorites = async () => {
   try {
     const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
     if (response.documents.length === 0) {
@@ -100,8 +79,7 @@ const getIsFavorite = async () => {
           image: document.image,
           mealId: document.mealId,
         })) as IMeals[];
-      console.log(favorites.value);
-      // Populate the favoriteMap with the current favorite status
+
       favorites.value.forEach((meal) => {
         favoriteMap.value[meal.mealId] = true;
       });
@@ -112,33 +90,11 @@ const getIsFavorite = async () => {
   }
 };
 
-const getFavoriteItems = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
-    if (response.documents.length === 0) {
-      console.log("No items available.");
-    } else {
-      const allItems = response.documents
-        .filter((document) => document.user === cDStore.user.email)
-        .map((document) => ({
-          $id: document.$id,
-          name: document.name,
-          price: document.price,
-          $createdAt: document.$createdAt,
-          image: document.image,
-          mealId: document.mealId,
-        }));
-      console.log(allItems); // This will log the array of all items
-    }
-  } catch (error) {
-    console.error("Error fetching items:", error);
-  }
-};
-const getIsCart = async () => {
+const fetchCart = async () => {
   try {
     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
     if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
+      errorMessage.value = "No cart items available.";
     } else {
       carts.value = response.documents
         .filter((document) => document.user === cDStore.user.email)
@@ -152,74 +108,83 @@ const getIsCart = async () => {
           mealId: document.mealId,
         })) as IMeals[];
 
-      // Populate the favoriteMap with the current favorite status
       carts.value.forEach((cart) => {
         cartMap.value[cart.mealId] = true;
       });
     }
   } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
+    console.error("Error fetching cart items:", error);
+    errorMessage.value = "An error occurred while fetching cart items.";
   }
 };
-// Check if a meal is in favorites
-const checkIsFavorite = (mealId: string) => {
-  return favoriteMap.value[mealId] || false; // Return false if not found
+
+// Meal mutation
+const createMeal = () => {
+  const mealU = {
+    name: "New Meal",
+    price: 0,
+    image:
+      "https://cloud.appwrite.io/v1/storage/buckets/shop-bucket/files/2bc08d06-aca5-4b11-a360-274b53d1f4a2/view?project=crm-nuxt-shop&project=crm-nuxt-shop&mode=admin",
+  };
+
+  mutate(mealU);
 };
-// Toggle favorite status
+
+// Handle adding/removing favorites
+const checkIsFavorite = (mealId: string) => {
+  return favoriteMap.value[mealId] || false;
+};
+
 const makeFavorite = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
+  if (isProcessing.value) return;
   isProcessing.value = true;
-  console.log(meal);
   const IMealFavorite = checkIsFavorite(meal.$id);
 
   try {
     if (IMealFavorite) {
-      await cDStore.removeFavorite(meal.$id); // Remove from favorites
-      // Remove the specific meal from the favorites array
+      await cDStore.removeFavorite(meal.$id);
       favorites.value = favorites.value.filter(
         (favorite) => favorite.mealId !== meal.$id
       );
     } else {
-      await cDStore.addFavorite(meal.$id); // Add to favorites
-      // Add the new favorite to the favorites array
+      await cDStore.addFavorite(meal.$id);
       favorites.value.push(meal);
     }
 
-    // Toggle the local state of the favorite map after operation
     favoriteMap.value[meal.$id] = !IMealFavorite;
   } catch (error) {
     console.error("Error toggling favorite:", error);
   } finally {
-    isProcessing.value = false; // Reset loading state
+    isProcessing.value = false;
   }
 };
 
+// Handle adding/removing from cart
 const checkIsCart = (mealId: string) => {
-  return cartMap.value[mealId] || false; // Return false if not found
+  return cartMap.value[mealId] || false;
 };
-// Toggle favorite status
+
 const makeCart = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
+  if (isProcessing.value) return;
   isProcessing.value = true;
-  console.log(meal);
   const IMealCart = checkIsCart(meal.$id);
 
   try {
     if (IMealCart) {
-      await cDStore.removeFromCart(meal.$id); // Remove from favorites
+      await cDStore.removeFromCart(meal.$id);
     } else {
-      await cDStore.addToCart(meal.$id); // Add to favorites
+      await cDStore.addToCart(meal.$id);
     }
 
-    // Toggle the local state of the favorite map after operation
     cartMap.value[meal.$id] = !IMealCart;
   } catch (error) {
-    console.error("Error toggling favorite:", error);
+    console.error("Error toggling cart:", error);
   } finally {
-    isProcessing.value = false; // Reset loading state
+    isProcessing.value = false;
   }
 };
+
+// Reset state and refetch
 const resetState = () => {
   meals.value = [];
   favorites.value = [];
@@ -228,24 +193,15 @@ const resetState = () => {
   cartMap.value = {};
   errorMessage.value = null;
 };
+
 const refetch = () => {
   resetState();
-  // getItems();
-  getIsFavorite();
-  getIsCart();
+  fetchMeals();
+  fetchFavorites();
+  fetchCart();
 };
 
-const onCheck = () => {};
-
-// Handle file change
-
-// Initial loading of data
-onMounted(() => {
-  // getItems();
-  getIsFavorite();
-  getIsCart();
-  getFavoriteItems();
-});
+// Watch user change
 watch(
   () => cDStore.user,
   (newUser, oldUser) => {
@@ -255,10 +211,47 @@ watch(
     }
   }
 );
+const isDataLoaded = ref(false);
+
+watch(
+  () => useAuthStore().isAuth,
+  async (isAuthenticated) => {
+    if (isAuthenticated && !isDataLoaded.value) {
+      try {
+        // Fetch user data once the user is authenticated
+        const userData = await fetchUserData();
+        // Transform the Document object into an IAuthStore object
+        const authData: IAuthStore = {
+          email: userData.email,
+          status: true, // Assuming the user is authenticated
+          name: userData.name,
+        };
+        // Set the data in the store or state
+        useAuthStore().setUserData(authData);
+        isDataLoaded.value = true; // Mark the data as loaded
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    }
+  },
+  { immediate: true } // Ensure the watcher runs immediately if the user is already logged in
+);
+// Initial loading of data
+onMounted(() => {
+  fetchMeals();
+  fetchFavorites();
+  fetchCart();
+
+  setTimeout(() => {
+    router.push("/products");
+  }, 1000);
+});
 </script>
 
 <template>
   <div class="text-2xl test-light text-gray-800 p-10">Today's best</div>
+
+  <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
 
   <div class="max-w-[95%] mx-auto relative">
     <Carousel class="w-full max-w-[80vw] mx-auto">

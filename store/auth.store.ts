@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 // Interface for user data
-interface IAuthStore {
+export interface IAuthStore {
   email: string;
   status: boolean;
   name: string;
@@ -25,16 +25,25 @@ export const useAuthStore = defineStore("auth", {
     isAuth: (state) => state.user.status,
   },
   actions: {
+    // Clear user data
     clear() {
       this.$patch(getDefaultAuthState());
     },
 
+    // Set user data (partially or fully)
     set(input: Partial<IAuthStore>) {
       this.$patch({
         user: {
           ...this.user,
           ...input,
         },
+      });
+    },
+
+    // New action to set user data
+    setUserData(data: IAuthStore) {
+      this.$patch({
+        user: data,
       });
     },
   },

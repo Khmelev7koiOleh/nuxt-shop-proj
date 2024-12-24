@@ -2,8 +2,13 @@
 import { ref, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { account, DB } from "~/lib/appwrite";
-import { useAuthStore, useIsLoadingStore } from "~/store/auth.store";
+import {
+  useAuthStore,
+  useIsLoadingStore,
+  useIsSidebarOpenStore,
+} from "~/store/auth.store";
 import { useFavoritesStore } from "~/store/createDocument.store";
+
 import {
   COLLECTION_MEALS,
   COLLECTION_FAVORITES,
@@ -12,8 +17,34 @@ import {
 } from "~/app.constants";
 import type { IMeals } from "~/types/order.types";
 
+const { mutate: loginMutate } = useLogin();
+const { mutate: registerMutate } = useRegister();
+
+// Example usage:
+
+useSeoMeta({
+  title: "Login",
+});
+const login = () => {
+  loginMutate({ email: emailRef.value, password: passwordRef.value });
+};
+
+const register = () => {
+  registerMutate({
+    email: emailRef.value,
+    password: passwordRef.value,
+    name: nameRef.value,
+  });
+};
+
+const isSidebarOpen = useIsSidebarOpenStore();
+const emailRef = ref("");
+const passwordRef = ref("");
+const nameRef = ref("");
+
 // Stores
 const store = useAuthStore();
+const authStore = useAuthStore();
 const isLoadingStore = useIsLoadingStore();
 const cDStore = useFavoritesStore();
 const router = useRouter();
@@ -28,16 +59,6 @@ const cartMap = ref<Record<string, boolean>>({});
 const errorMessage = ref<string | null>(null);
 
 // Logout function
-const logout = async () => {
-  try {
-    await account.deleteSession("current");
-    store.set({ email: "", name: "", status: false });
-    router.push("/login");
-  } catch (error) {
-    console.error("Logout failed:", error);
-    errorMessage.value = "Logout failed. Please try again.";
-  }
-};
 
 // Fetch meals
 const fetchMeals = async () => {
@@ -150,14 +171,6 @@ onMounted(async () => {
       class="md:block fixed top-0 left-0 z-10 w-[70px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
     >
       <LayoutSidebar />
-
-      <button
-        @click="logout"
-        class="absolute bottom-4 right-0 w-full flex items-center justify-center gap-2 text-white text-xl hover:text-gray-500 transition duration-300"
-      >
-        <div>Logout</div>
-        <Icon name="line-md:logout" size="25" />
-      </button>
     </aside>
 
     <!-- Main Content -->
@@ -165,6 +178,43 @@ onMounted(async () => {
       <slot />
     </div>
   </section>
+
+  <form v-if="false">
+    <UiInput
+      v-model="emailRef"
+      placeholder="Email"
+      type="email"
+      class="mb-4 placeholder:text-gray-300 text-white"
+    />
+    <UiInput
+      v-model="passwordRef"
+      placeholder="Password"
+      type="password"
+      class="mb-4 placeholder:text-gray-300 text-white"
+    />
+    <!-- Only show name input for registration -->
+    <UiInput
+      v-if="!authStore.isAuth"
+      v-model="nameRef"
+      placeholder="Name"
+      type="text"
+      class="mb-4 placeholder:text-gray-300 text-white"
+    />
+    <div class="flex justify-center items-center gap-5">
+      <UiButton
+        type="button"
+        class="bg-gray-800 text-white rounded hover:bg-gray-700"
+        @click="login"
+        >Login</UiButton
+      >
+      <UiButton
+        type="button"
+        class="bg-gray-800 text-white rounded hover:bg-gray-700"
+        @click="register"
+        >Register</UiButton
+      >
+    </div>
+  </form>
 </template>
 
 <style scoped>

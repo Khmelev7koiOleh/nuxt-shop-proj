@@ -34,6 +34,7 @@ export function useRegister() {
     },
     onSuccess() {
       isLoadingStore.set(false);
+
       router.push("/"); // Redirect to the home page after successful registration
     },
     onError(error) {
