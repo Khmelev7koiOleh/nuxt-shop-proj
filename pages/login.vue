@@ -90,6 +90,23 @@ onMounted(() => {
     isSidebarOpen.set(true);
   }
 });
+
+onMounted(() => {
+  if (window.location.pathname === "/login") {
+    const preventReload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = ""; // Required for some browsers
+      return "";
+    };
+
+    window.addEventListener("beforeunload", preventReload);
+
+    // Cleanup listener when leaving the page
+    onBeforeUnmount(() => {
+      window.removeEventListener("beforeunload", preventReload);
+    });
+  }
+});
 // Watcher for debugging (optional)
 watch(isSidebarOpen, () => {
   console.log("isSidebarOpen:", isSidebarOpen);
