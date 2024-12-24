@@ -84,7 +84,11 @@ const errorMessage = ref<string | null>(null);
 //     isLoadingStore.set(false);
 //   }
 // };
-
+onMounted(() => {
+  if (authStore.isAuth) {
+    isSidebarOpen.set(true);
+  }
+});
 // Watcher for debugging (optional)
 watch(isSidebarOpen, () => {
   console.log("isSidebarOpen:", isSidebarOpen);

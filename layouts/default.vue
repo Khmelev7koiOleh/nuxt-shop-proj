@@ -179,7 +179,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <form v-if="false">
+  <form v-if="true">
     <UiInput
       v-model="emailRef"
       placeholder="Email"
