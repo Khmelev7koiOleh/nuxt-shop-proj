@@ -115,7 +115,7 @@ watch(isSidebarOpen, () => {
 
 <template>
   <div class="p-10 flex justify-center items-center min-h-screen w-full">
-    <div class="rounded bg-gray-900 w-1/4 p-5">
+    <div class="rounded bg-gray-900 w-full md:w-1/4 p-5">
       <h1 class="text-2xl font-bold text-center mb-5 text-gray-100">Login</h1>
 
       <!-- Error message display -->
