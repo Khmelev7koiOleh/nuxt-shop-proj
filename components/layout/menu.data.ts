@@ -53,7 +53,7 @@ export const MENU_DATA: IMenuItem[] = [
   },
   {
     icon: "radix-icons:question-mark",
-    name: "Help center",
+    name: "Help",
     url: "/help",
   },
 ];
