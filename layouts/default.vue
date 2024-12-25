@@ -146,6 +146,12 @@ const restartSession = async (email: string, password: string) => {
     console.error("Failed to restart session:", error);
   }
 };
+const marginClass = computed(() => {
+  if (!store.isAuth) return "ml-0";
+  return sidebarStore.onSidebarOpen
+    ? "ml-[200px] duration-700"
+    : "ml-[80px] duration-700";
+});
 // Watch for authentication changes
 watch(
   () => store.isAuth,
@@ -176,7 +182,8 @@ onMounted(async () => {
     </aside>
 
     <!-- Main Content -->
-    <div :class="[{ 'md:ml-[200px] ml-[70px]': store.isAuth }, 'flex-1']">
+
+    <div :class="[marginClass, 'flex-1']">
       <slot />
     </div>
   </section>
