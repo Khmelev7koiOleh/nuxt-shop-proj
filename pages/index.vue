@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, watchEffect } from "vue";
 import {
   DB_ID,
   COLLECTION_MEALS,
@@ -202,15 +202,11 @@ const refetch = () => {
 };
 
 // Watch user change
-watch(
-  () => cDStore.user,
-  (newUser, oldUser) => {
-    if (newUser !== oldUser) {
-      resetState();
-      refetch();
-    }
-  }
-);
+// watchEffect(() => {
+//   if (!data.value && data.value) {
+//     window.location.reload();
+//   }
+// });
 const isDataLoaded = ref(false);
 
 watch(
@@ -228,6 +224,7 @@ watch(
         };
         // Set the data in the store or state
         useAuthStore().setUserData(authData);
+
         isDataLoaded.value = true; // Mark the data as loaded
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -237,10 +234,15 @@ watch(
   { immediate: true } // Ensure the watcher runs immediately if the user is already logged in
 );
 // Initial loading of data
-onMounted(() => {
+onMounted(async () => {
   fetchMeals();
   fetchFavorites();
   fetchCart();
+  // useGetMeals();
+  // useGetFavorites();
+  // useGetCarts();
+
+  // console.log("isDataLoaded:", data.value);
 });
 </script>
 
