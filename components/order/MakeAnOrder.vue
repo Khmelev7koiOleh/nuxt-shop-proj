@@ -18,14 +18,15 @@ import { useFavoritesStore } from "~/store/createDocument.store";
 import { useRouter } from "vue-router";
 import { openOrder, useMakeOrderStore } from "./make-order.store";
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { set } from "@vueuse/core";
+import { useGetCarts } from "@/composables/useGetCarts";
+
+const {
+  data,
+  isLoading: isLoadingCarts,
+  isError: isErrorCarts,
+  totalItems,
+  totalPrice,
+} = useGetCarts();
 
 const router = useRouter();
 
@@ -42,7 +43,6 @@ const meals = ref<IMeals[]>([]);
 const favorites = ref<IMeals[]>([]);
 const cartMap = ref<{ [mealId: string]: boolean }>({});
 const carts = ref<IMeals[]>([]);
-const total = ref(0);
 const onOrderSuccess = ref(false);
 const favoriteMap = ref<{ [mealId: string]: boolean }>({});
 const orderIsCompleted = ref(false);
@@ -58,85 +58,85 @@ const getUser = async () => {
   }
 };
 
-const getItems = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No meals available.";
-    } else {
-      meals.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+// const getItems = async () => {
+//   try {
+//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+//     if (response.documents.length === 0) {
+//       errorMessage.value = "No meals available.";
+//     } else {
+//       meals.value = response.documents.map((document) => ({
+//         $id: document.$id,
+//         name: document.name,
+//         price: document.price,
+//         $createdAt: document.$createdAt,
+//         image: document.image,
+//       })) as IMeals[];
 
-      meals.value.sort((a, b) => {
-        const dateA = new Date(a.$createdAt);
-        const dateB = new Date(b.$createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching meals:", error);
-    errorMessage.value = "An error occurred while fetching meals.";
-  }
-};
+//       meals.value.sort((a, b) => {
+//         const dateA = new Date(a.$createdAt);
+//         const dateB = new Date(b.$createdAt);
+//         return dateB.getTime() - dateA.getTime();
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error fetching meals:", error);
+//     errorMessage.value = "An error occurred while fetching meals.";
+//   }
+// };
 
-// Fetch favorites and update favorite map
-const getIsFavorite = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      favorites.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+// // Fetch favorites and update favorite map
+// const getIsFavorite = async () => {
+//   try {
+//     const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+//     if (response.documents.length === 0) {
+//       errorMessage.value = "No favorites available.";
+//     } else {
+//       favorites.value = response.documents.map((document) => ({
+//         $id: document.$id,
+//         name: document.name,
+//         price: document.price,
+//         $createdAt: document.$createdAt,
+//         image: document.image,
+//       })) as IMeals[];
 
-      // Populate the favoriteMap with the current favorite status
-      favorites.value.forEach((meal) => {
-        favoriteMap.value[meal.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
+//       // Populate the favoriteMap with the current favorite status
+//       favorites.value.forEach((meal) => {
+//         favoriteMap.value[meal.$id] = true;
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error fetching favorites:", error);
+//     errorMessage.value = "An error occurred while fetching favorites.";
+//   }
+// };
 
-const getIsCart = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      carts.value = response.documents
-        .filter((document) => document.user === cDStore.user.email)
-        .map((document) => ({
-          $id: document.$id,
-          name: document.name,
-          price: document.price,
-          $createdAt: document.$createdAt,
-          image: document.image,
-        })) as IMeals[];
+// const getIsCart = async () => {
+//   try {
+//     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
+//     if (response.documents.length === 0) {
+//       errorMessage.value = "No favorites available.";
+//     } else {
+//       carts.value = response.documents
+//         .filter((document) => document.user === cDStore.user.email)
+//         .map((document) => ({
+//           $id: document.$id,
+//           name: document.name,
+//           price: document.price,
+//           $createdAt: document.$createdAt,
+//           image: document.image,
+//         })) as IMeals[];
 
-      total.value = carts.value.length;
-      // Populate the favoriteMap with the current favorite status
-      carts.value.forEach((cart) => {
-        cartMap.value[cart.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
+//       total.value = carts.value.length;
+//       // Populate the favoriteMap with the current favorite status
+//       carts.value.forEach((cart) => {
+//         cartMap.value[cart.$id] = true;
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error fetching favorites:", error);
+//     errorMessage.value = "An error occurred while fetching favorites.";
+//   }
+// };
 
 // Check if a meal is in favorites
 const checkIsCart = (mealId: string) => {
@@ -231,9 +231,6 @@ const transferCartToOrders = async () => {
     }
 
     onOrderSuccess.value = true;
-    setTimeout(() => {
-      getIsCart();
-    }, 2000);
   } catch (error) {
     console.error("Failed to transfer cart to orders:", error);
     errorMessage.value = error.message || "An error occurred while processing.";
@@ -317,10 +314,6 @@ const transferCartToOrders = async () => {
 
 // Initial loading of data
 onMounted(() => {
-  getItems();
-  getIsCart();
-  getIsFavorite();
-
   getUser();
 });
 
@@ -333,19 +326,6 @@ onMounted(() => {
 //     }, 1500);
 //   }
 // );
-const setTimeoutFunction = () => {
-  setTimeout(() => {
-    getIsCart();
-  }, 1500);
-};
-
-watch(
-  () => carts.value.length,
-  async () => {
-    await getIsCart();
-    console.log(isLoading.value);
-  }
-);
 </script>
 
 <template>
@@ -356,34 +336,34 @@ watch(
     <button @click="onSubmit" type="submit">Submit</button>
     <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
   </div> -->
-  <div class="text-3xl test-light text-gray-300 text-center">Order</div>
-  <section v-if="openOrder" class="w-full h-full">
-    <div class="flex justify-around items-center">
-      <div @click="openOrder = !openOrder" class="m-4">
-        <Icon :name="'ion:close'" class="w-8 h-8 text-bold text-white" />
-      </div>
-
-      <div class="flex justify-end items-end m-10">
-        <div class="flex">
+  <div class="flex justify-between items-center">
+    <div @click="openOrder = !openOrder" class="m-4">
+      <Icon :name="'ion:close'" class="w-8 h-8 text-bold text-white" />
+    </div>
+    <div class="flex justify-center items-center pr-5">
+      <div class="flex justify-end items-end">
+        <div class="flex gap-2 items-center justify-center">
           <Icon
             :name="'fluent:receipt-28-regular'"
             class="w-5 h-5 text-bold text-white"
           />
-          <div class="text-white">Make an order: {{ total }}</div>
+          <div class="text-white">Total: {{ totalPrice }}</div>
         </div>
       </div>
     </div>
-
+  </div>
+  <section v-if="openOrder" class="w-full h-full">
     <div class="py-10"></div>
-    <div v-if="carts.length > 0" class="max-w-[95%] mx-auto relative">
+    <div class="border-t"></div>
+    <div class="max-w-[95%] mx-auto relative">
       <div
-        v-for="cart in carts"
+        v-for="cart in data"
         :key="cart.$id"
-        class="basis-1/3"
+        class="basis-1/3 border-b"
         :wrap-around="true"
       >
         <div
-          class="w-full h-full flex flex-col items-center justify-center border border-gray-900 rounded-3xl bg-transparent py-4"
+          class="w-full h-full flex flex-col items-center justify-center bg-transparent py-4"
         >
           <div class="w-full flex flex-col items-center">
             <p>{{ cart.name }}</p>
@@ -413,7 +393,6 @@ watch(
                   @click="
                     async () => {
                       await cDStore.removeFromCart(cart.$id);
-                      setTimeoutFunction();
                     }
                   "
                   :name="'ion:cart'"
@@ -425,10 +404,7 @@ watch(
         </div>
       </div>
     </div>
-    <div v-else>
-      <div v-if="carts.length > 0 && orderIsCompleted">Order is completed</div>
-      <div v-else>Add something to your cart</div>
-    </div>
+
     <div class="w-full flex items-center justify-center py-10">
       <button
         @click="transferCartToOrders"

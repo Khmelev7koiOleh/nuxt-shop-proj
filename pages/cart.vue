@@ -19,10 +19,29 @@ import { useRouter } from "vue-router";
 import { openOrder } from "~/components/order/make-order.store";
 import { useGetCarts } from "@/composables/useGetCarts";
 import { useGetMeals } from "~/composables/useGetMeals";
+import { useDeleteCartMeal } from "~/composables/useDeleteCartMeal";
+
 // composables
 
-const { data, isLoading: isLoadingCart, isError: isErrorCart } = useGetCarts();
+const {
+  data,
+  isLoading: isLoadingCart,
+  isError: isErrorCart,
+  totalItems,
+} = useGetCarts();
 
+const {
+  mutate: deleteCartMeal,
+  isPending: isPendingDelete,
+  isError: isErrorDelete,
+} = useDeleteCartMeal();
+
+const filteredCarts = ref<IMeals[]>([]);
+// Watch for changes in data and update filteredCarts
+watchEffect(() => {
+  filteredCarts.value = data.value || [];
+});
+// const { totalItems } = useTotalItems(filteredCarts.value);
 const router = useRouter();
 
 // store
@@ -38,7 +57,6 @@ const meals = ref<IMeals[]>([]);
 const favorites = ref<IMeals[]>([]);
 const cartMap = ref<{ [mealId: string]: boolean }>({});
 const carts = ref<IMeals[]>([]);
-const total = ref(0);
 
 const favoriteMap = ref<{ [mealId: string]: boolean }>({});
 
@@ -97,46 +115,12 @@ const getIsFavorite = async () => {
   }
 };
 
-// const getIsCart = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No favorites available.";
-//     } else {
-//       carts.value = response.documents
-//         .filter((document) => document.user === cDStore.user.email)
-//         .map((document) => ({
-//           $id: document.$id,
-//           name: document.name,
-//           price: document.price,
-//           user: document.user,
-//           $createdAt: document.$createdAt,
-//           image: document.image,
-//         })) as IMeals[];
-
-//       carts.value.sort((a, b) => {
-//         const dateA = new Date(a.$createdAt);
-//         const dateB = new Date(b.$createdAt);
-//         return dateB.getTime() - dateA.getTime();
-//       });
-//       total.value = carts.value.length;
-//       // Populate the favoriteMap with the current favorite status
-//       carts.value.forEach((cart) => {
-//         cartMap.value[cart.$id] = true;
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching favorites:", error);
-//     errorMessage.value = "An error occurred while fetching favorites.";
-//   }
-// };
-
 const removeFromCart = async (id: string) => {
   try {
     await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
     carts.value = carts.value.filter((cart) => cart.$id !== id);
     delete cartMap.value[id];
-    total.value = carts.value.length;
+    // total.value = carts.value.length;
     getIsFavorite();
   } catch (error) {
     console.error("Error deleting blog:", error);
@@ -194,74 +178,6 @@ const makeFavorite = async (meal: IMeals) => {
   }
 };
 
-// Handle file change
-// const handleFileChange = (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   if (target.files && target.files.length > 0) {
-//     fileRef.value = target.files[0];
-//   } else {
-//     fileRef.value = null;
-//   }
-// };
-
-// Reset form
-// const resetForm = () => {
-//   nameRef.value = "";
-//   fileRef.value = null;
-//   isLoading.value = false;
-//   errorMessage.value = null;
-// };
-
-// // Upload image
-// const uploadImage = async () => {
-//   if (!fileRef.value) {
-//     errorMessage.value = "No file selected.";
-//     return null;
-//   }
-
-//   try {
-//     const file = await storage.createFile(STORAGE_ID, uuid(), fileRef.value);
-//     return file;
-//   } catch (error) {
-//     console.error("Error uploading file:", error);
-//     errorMessage.value = "File upload failed.";
-//     return null;
-//   }
-// };
-
-// Use form with validation
-// const { handleSubmit } = useForm<IMeals>();
-// const mutation = useMutation({
-//   mutationKey: ["meals", nameRef.value],
-//   mutationFn: async () => {
-//     const uploadedFile = await uploadImage();
-//     if (!uploadedFile) throw new Error("File upload failed.");
-
-//     const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
-//     return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
-//       name: nameRef.value,
-//       price: priceRef.value,
-//       image: imageURL,
-//       $createdAt: new Date().toISOString(),
-//     });
-//   },
-//   onSuccess: () => {
-//     console.log("Meal created successfully.");
-//     resetForm();
-//     getIsCart(); // Refresh meals
-//   },
-//   onError: (error) => {
-//     console.error("Error creating meal:", error);
-//     errorMessage.value = "Meal creation failed.";
-//   },
-// });
-
-// Form submission
-// const onSubmit = handleSubmit(() => {
-//   isLoading.value = true;
-//   mutation.mutate();
-// });
-
 // Initial loading of data
 onMounted(() => {
   getItems();
@@ -304,7 +220,7 @@ watch(
         class="py-5 px-10 bg-blue-500 text-white rounded-lg flex items-center justify-center gap-4"
       >
         <Icon :name="'fluent:receipt-28-regular'" class="w-5 h-5 text-bold" />
-        <div>Make an order: {{ total }}</div>
+        <div>Make an order: {{ totalItems }}</div>
       </div>
       <div
         v-if="openOrder"
@@ -352,11 +268,7 @@ watch(
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon
-                  @click="
-                    async () => {
-                      await removeStore.removeFromCart(cart.$id);
-                    }
-                  "
+                  @click.prevent="deleteCartMeal(cart.$id)"
                   :name="'ion:cart'"
                   class="w-5 h-5 text-bold"
                 />

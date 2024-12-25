@@ -16,6 +16,7 @@ import {
   DB_ID,
 } from "~/app.constants";
 import type { IMeals } from "~/types/order.types";
+import { useSidebarStore } from "~/store/sidebarStore";
 
 const { mutate: loginMutate } = useLogin();
 const { mutate: registerMutate } = useRegister();
@@ -37,6 +38,7 @@ const register = () => {
 };
 
 const isSidebarOpen = useIsSidebarOpenStore();
+const sidebarStore = useSidebarStore();
 const emailRef = ref("");
 const passwordRef = ref("");
 const nameRef = ref("");
@@ -167,7 +169,8 @@ onMounted(async () => {
     <!-- Sidebar for authenticated users -->
     <aside
       v-if="store.isAuth"
-      class="md:block fixed top-0 left-0 z-10 w-[70px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
+      class="md:block fixed top-0 left-0 z-10 w-[40px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
+      :class="[sidebarStore.onSidebarOpen ? 'w-full' : '']"
     >
       <LayoutSidebar />
     </aside>

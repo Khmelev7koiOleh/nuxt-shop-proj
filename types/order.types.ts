@@ -11,6 +11,7 @@ export interface IMeals {
   email?: string;
   password?: string;
   cardDetails?: string;
+  quantity?: number;
 }
 
 // export interface IFavorites extends IBaseField {

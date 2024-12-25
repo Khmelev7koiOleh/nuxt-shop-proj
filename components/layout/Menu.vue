@@ -2,9 +2,10 @@
   <div>
     <NuxtLink
       :to="item.url"
-      class="w-[100%] flex items-center gap-2 p-3 rounded-md hover:bg-accent hover:text-gray-400 cursor-pointer"
+      @click="sidebarStore.onSidebarOpen = false"
+      class="w-[100%] flex items-center gap-2 p-2 rounded-md hover:bg-accent hover:text-gray-400 cursor-pointer"
     >
-      <Icon :name="item.icon" />
+      <Icon :name="props.item.icon" />
       <div>{{ item.name }}</div>
     </NuxtLink>
   </div>
@@ -13,6 +14,8 @@
 <script setup lang="ts">
 import { defineProps } from "vue";
 import { MENU_DATA } from "./menu.data";
+import { useSidebarStore } from "~/store/sidebarStore";
+const sidebarStore = useSidebarStore();
 
 const props = defineProps({
   item: {

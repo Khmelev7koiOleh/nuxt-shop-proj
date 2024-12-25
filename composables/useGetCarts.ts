@@ -7,17 +7,24 @@ import type { IMeals } from "~/types/order.types";
 export function useGetCarts() {
   const cDStore = useFavoritesStore(); // Accessing the store with user email
 
-  return useQuery({
+  const { data, ...query } = useQuery({
     queryKey: ["cart"],
     queryFn: () => DB.listDocuments(DB_ID, COLLECTION_CART),
     select(data) {
       const carts = data.documents as unknown as IMeals[];
-
       // Filter carts based on the user's email
       const filteredCarts = carts.filter(
         (document) => document.user === cDStore.user.email
       );
-      return filteredCarts;
+
+      return filteredCarts as IMeals[];
     },
   });
+
+  const totalItems = computed(() => (data.value ? data.value.length : 0));
+  const totalPrice = computed(() =>
+    data.value ? data.value.reduce((total, cart) => total + cart.price, 0) : 0
+  );
+
+  return { data, totalPrice, totalItems, ...query };
 }
