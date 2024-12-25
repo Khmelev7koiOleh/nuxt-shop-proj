@@ -169,8 +169,8 @@ onMounted(async () => {
     <!-- Sidebar for authenticated users -->
     <aside
       v-if="store.isAuth"
-      class="md:block fixed top-0 left-0 z-10 w-[40px] md:w-[60px] bg-gray-200 h-full flex items-center justify-center"
-      :class="[sidebarStore.onSidebarOpen ? 'w-full' : '']"
+      class="md:block fixed top-0 left-0 z-10 w-[40px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center"
+      :class="[sidebarStore.onSidebarOpen ? 'w-full' : 'md:w-[60px]']"
     >
       <LayoutSidebar />
     </aside>

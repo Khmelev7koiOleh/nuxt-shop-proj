@@ -81,7 +81,7 @@ onMounted(() => {
       @click="logout"
       class="absolute bottom-4 right-0 w-full flex items-center justify-center gap-2 text-white text-xl hover:text-gray-500 transition duration-300"
     >
-      <div class="flex gap-2 bg-gray-500 px-2 py-1 rounded">
+      <div class="flex gap-2 bg-gray-00 px-2 py-1 rounded">
         <div v-if="sidebarStore.onSidebarOpen">Logout</div>
         <Icon name="line-md:logout" size="25" />
       </div>
