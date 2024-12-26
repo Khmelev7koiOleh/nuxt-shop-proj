@@ -17,8 +17,12 @@ import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
 import { useRouter } from "vue-router";
 import { openOrder, useMakeOrderStore } from "./make-order.store";
-
+import { useDefineCard } from "@/composables/defineCard";
 import { useGetCarts } from "@/composables/useGetCarts";
+import { useTransferToOrder } from "@/composables/transferToOrder";
+import { useDeleteCartMeal } from "@/composables/useDeleteCartMeal";
+
+const { name, price, description, image, user } = useDefineCard();
 
 const {
   data,
@@ -28,25 +32,29 @@ const {
   totalPrice,
 } = useGetCarts();
 
+const {
+  mutate: transferCartToOrders,
+  isPending: isPendingTransfer,
+  isError: isErrorTransfer,
+} = useTransferToOrder();
 const router = useRouter();
+
+const {
+  mutate: deleteCartMeal,
+  isPending: isPendingDelete,
+  isError: isErrorDelete,
+} = useDeleteCartMeal();
 
 // store
 const cDStore = useFavoritesStore();
 const mDStore = useMakeOrderStore();
 // Input references and error handling
-const nameRef = ref("");
-const priceRef = ref(0);
-const fileRef = ref<File | null>(null);
-const errorMessage = ref<string | null>(null);
-const isLoading = ref(false);
-const meals = ref<IMeals[]>([]);
-const favorites = ref<IMeals[]>([]);
+
 const cartMap = ref<{ [mealId: string]: boolean }>({});
-const carts = ref<IMeals[]>([]);
-const onOrderSuccess = ref(false);
+
 const favoriteMap = ref<{ [mealId: string]: boolean }>({});
-const orderIsCompleted = ref(false);
-const user = ref("");
+
+// const user = ref("");
 // Loading and async state
 const isProcessing = ref(false);
 
@@ -57,86 +65,6 @@ const getUser = async () => {
     console.error("Error fetching user:", error);
   }
 };
-
-// const getItems = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No meals available.";
-//     } else {
-//       meals.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//       })) as IMeals[];
-
-//       meals.value.sort((a, b) => {
-//         const dateA = new Date(a.$createdAt);
-//         const dateB = new Date(b.$createdAt);
-//         return dateB.getTime() - dateA.getTime();
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching meals:", error);
-//     errorMessage.value = "An error occurred while fetching meals.";
-//   }
-// };
-
-// // Fetch favorites and update favorite map
-// const getIsFavorite = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No favorites available.";
-//     } else {
-//       favorites.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//       })) as IMeals[];
-
-//       // Populate the favoriteMap with the current favorite status
-//       favorites.value.forEach((meal) => {
-//         favoriteMap.value[meal.$id] = true;
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching favorites:", error);
-//     errorMessage.value = "An error occurred while fetching favorites.";
-//   }
-// };
-
-// const getIsCart = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No favorites available.";
-//     } else {
-//       carts.value = response.documents
-//         .filter((document) => document.user === cDStore.user.email)
-//         .map((document) => ({
-//           $id: document.$id,
-//           name: document.name,
-//           price: document.price,
-//           $createdAt: document.$createdAt,
-//           image: document.image,
-//         })) as IMeals[];
-
-//       total.value = carts.value.length;
-//       // Populate the favoriteMap with the current favorite status
-//       carts.value.forEach((cart) => {
-//         cartMap.value[cart.$id] = true;
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error fetching favorites:", error);
-//     errorMessage.value = "An error occurred while fetching favorites.";
-//   }
-// };
 
 // Check if a meal is in favorites
 const checkIsCart = (mealId: string) => {
@@ -190,152 +118,13 @@ const makeFavorite = async (meal: IMeals) => {
   }
 };
 
-const transferCartToOrders = async () => {
-  isLoading.value = true;
-  errorMessage.value = null; // Reset error message at the start
-
-  try {
-    // Fetch all documents from the cart collection
-    const cartResponse = await DB.listDocuments(DB_ID, COLLECTION_CART);
-    const cartItems = cartResponse.documents;
-
-    if (!cartItems || cartItems.length === 0) {
-      throw new Error("Cart is empty. No items to transfer.");
-    }
-
-    console.log("Cart items fetched:", cartItems);
-
-    // Iterate over each cart item and create a corresponding order
-    for (const cartItem of cartItems) {
-      const orderData = {
-        name: cartItem.name,
-        price: cartItem.price,
-        image: cartItem.image,
-        $createdAt: new Date().toISOString(), // Ensure timestamp is accurate
-        user: user.value,
-      };
-
-      console.log("Creating order:", orderData);
-
-      // Create a new order document without specifying `$id`
-      await DB.createDocument(DB_ID, COLLECTION_ORDERS, "unique()", orderData);
-    }
-
-    console.log("All cart items successfully transferred to orders.");
-
-    // Optionally clear the cart after transferring
-    for (const cartItem of cartItems) {
-      await DB.deleteDocument(DB_ID, COLLECTION_CART, cartItem.$id);
-      console.log(`Removed item from cart: ${cartItem.$id}`);
-      orderIsCompleted.value = true;
-    }
-
-    onOrderSuccess.value = true;
-  } catch (error) {
-    console.error("Failed to transfer cart to orders:", error);
-    errorMessage.value = error.message || "An error occurred while processing.";
-  } finally {
-    isLoading.value = false;
-    onOrderSuccess.value = false;
-    setTimeout(() => {
-      orderIsCompleted.value = false;
-      router.push("/orders");
-    }, 1500);
-  }
-};
-
-// Handle file change
-// const handleFileChange = (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   if (target.files && target.files.length > 0) {
-//     fileRef.value = target.files[0];
-//   } else {
-//     fileRef.value = null;
-//   }
-// };
-
-// Reset form
-// const resetForm = () => {
-//   nameRef.value = "";
-//   fileRef.value = null;
-//   isLoading.value = false;
-//   errorMessage.value = null;
-// };
-
-// // Upload image
-// const uploadImage = async () => {
-//   if (!fileRef.value) {
-//     errorMessage.value = "No file selected.";
-//     return null;
-//   }
-
-//   try {
-//     const file = await storage.createFile(STORAGE_ID, uuid(), fileRef.value);
-//     return file;
-//   } catch (error) {
-//     console.error("Error uploading file:", error);
-//     errorMessage.value = "File upload failed.";
-//     return null;
-//   }
-// };
-
-// Use form with validation
-// const { handleSubmit } = useForm<IMeals>();
-// const mutation = useMutation({
-//   mutationKey: ["meals", nameRef.value],
-//   mutationFn: async () => {
-//     const uploadedFile = await uploadImage();
-//     if (!uploadedFile) throw new Error("File upload failed.");
-
-//     const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
-//     return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
-//       name: nameRef.value,
-//       price: priceRef.value,
-//       image: imageURL,
-//       $createdAt: new Date().toISOString(),
-//     });
-//   },
-//   onSuccess: () => {
-//     console.log("Meal created successfully.");
-//     resetForm();
-//     getIsCart(); // Refresh meals
-//   },
-//   onError: (error) => {
-//     console.error("Error creating meal:", error);
-//     errorMessage.value = "Meal creation failed.";
-//   },
-// });
-
-// Form submission
-// const onSubmit = handleSubmit(() => {
-//   isLoading.value = true;
-//   mutation.mutate();
-// });
-
 // Initial loading of data
 onMounted(() => {
   getUser();
 });
-
-// watch(
-//   () => carts.value,
-//   async () => {
-//     await setTimeout(() => {
-//       getIsCart();
-//       getIsFavorite();
-//     }, 1500);
-//   }
-// );
 </script>
 
 <template>
-  <!-- <div class="p-4 bg-slate-500 mb-20 flex flex-col gap-2 w-1/2">
-    <input type="text" v-model="nameRef" placeholder="Title" />
-    <input type="number" v-model="priceRef" placeholder="Price" />
-    <input type="file" @change="handleFileChange" />
-    <button @click="onSubmit" type="submit">Submit</button>
-    <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
-  </div> -->
   <div class="flex justify-between items-center">
     <div @click="openOrder = !openOrder" class="m-4">
       <Icon :name="'ion:close'" class="w-8 h-8 text-bold text-white" />
@@ -390,11 +179,7 @@ onMounted(() => {
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon
-                  @click="
-                    async () => {
-                      await cDStore.removeFromCart(cart.$id);
-                    }
-                  "
+                  @click="deleteCartMeal(cart.$id)"
                   :name="'ion:cart'"
                   class="w-5 h-5 text-bold"
                 />
@@ -404,17 +189,34 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <NuxtLink
+      to="/"
+      v-if="data?.length === 0"
+      class="text-white text-xl w-full h-full flex flex-col items-center justify-center my-10 gap-8"
+    >
+      <p class="text-black">Cart is empty</p>
+      <div
+        class="flex flex-col items-center justify-center py-4 px-8 bg-gray-900 rounded-lg"
+      >
+        <div class="text-2xl flex items-center justify-center">
+          Add to cart
+          <Icon :name="'ion:cart'" :size="30" />
+        </div>
+      </div>
+    </NuxtLink>
 
-    <div class="w-full flex items-center justify-center py-10">
+    <div
+      v-if="data?.length"
+      class="w-full flex items-center justify-center py-10"
+    >
       <button
-        @click="transferCartToOrders"
+        @click="transferCartToOrders()"
         class="cursor-pointer bg-blue-400 border border-blue-400 p-2 rounded-lg"
       >
         Make an order
       </button>
     </div>
   </section>
-  <section v-if="!openOrder">LOL</section>
 </template>
 
 <style scoped>
