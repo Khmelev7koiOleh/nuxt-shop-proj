@@ -249,9 +249,11 @@ onMounted(async () => {
 <template>
   <div class="text-2xl test-light text-gray-800 p-10">Today's best</div>
 
-  <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
+  <div v-if="!data" class="flex justify-center items-center">
+    <div class="text-red-500">{{ errorMessage }}</div>
+  </div>
 
-  <div class="max-w-[95%] mx-auto relative">
+  <div class="w-full mx-auto relative">
     <Carousel class="w-full max-w-[80vw] mx-auto">
       <div class="absolute -top-5 right-20">
         <CarouselPrevious />

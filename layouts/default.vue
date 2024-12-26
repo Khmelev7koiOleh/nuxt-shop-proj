@@ -133,19 +133,19 @@ const initializeData = async () => {
     router.push("/login");
   }
 };
-const restartSession = async (email: string, password: string) => {
-  try {
-    // Delete the current session
-    await account.deleteSession("current");
-    console.log("Session deleted successfully.");
+// const restartSession = async (email: string, password: string) => {
+//   try {
+//     // Delete the current session
+//     await account.deleteSession("current");
+//     console.log("Session deleted successfully.");
 
-    // Log the user back in
-    await account.createSession(email, password);
-    console.log("New session created successfully.");
-  } catch (error) {
-    console.error("Failed to restart session:", error);
-  }
-};
+//     // Log the user back in
+//     await account.createSession(email, password);
+//     console.log("New session created successfully.");
+//   } catch (error) {
+//     console.error("Failed to restart session:", error);
+//   }
+// };
 const marginClass = computed(() => {
   if (!store.isAuth) return "ml-0";
   return sidebarStore.onSidebarOpen
@@ -163,6 +163,7 @@ watch(
 // Lifecycle hook
 onMounted(async () => {
   await initializeData();
+  fetchCarts();
 });
 </script>
 
