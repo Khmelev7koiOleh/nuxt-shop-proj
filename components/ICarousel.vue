@@ -1,205 +1,148 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-
+import { ref, onMounted, watch } from "vue";
 import {
   DB_ID,
   COLLECTION_MEALS,
   COLLECTION_FAVORITES,
-  STORAGE_ID,
   COLLECTION_CART,
 } from "@/app.constants";
-import { DB, storage } from "@/lib/appwrite";
+import { DB } from "@/lib/appwrite";
 import { useMutation } from "@tanstack/vue-query";
-import { v4 as uuid } from "uuid";
-import { useForm } from "vee-validate";
-import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
+import { useCreateMeal } from "~/composables/useCreateMeal";
+import { useGetMeals } from "~/composables/useGetMeals";
+import type { IMeals } from "~/types/order.types";
+import { v4 as uuid } from "uuid";
+import { Carousel } from "~/components/ui/carousel";
+import { CarouselContent } from "~/components/ui/carousel";
+import { CarouselItem } from "~/components/ui/carousel";
+import { CarouselNext } from "~/components/ui/carousel";
+import { CarouselPrevious } from "~/components/ui/carousel";
+import { useGetFavorites } from "~/composables/useGetFavorites";
+import { useGetCarts } from "~/composables/useGetCarts";
+import { useAuthStore } from "~/store/auth.store";
+import { fetchUserData } from "~/composables/fetchUserData"; // Import the function
+import type { IAuthStore } from "~/store/auth.store";
+import { get, set } from "@vueuse/core";
+import { useRouter } from "vue-router";
+import { useMealMutations } from "@/composables/useFavoriteToggle";
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
-// store
+// Composables
+// const { mutate, isPending, isError } = useCreateMeal();
+const { data, isLoading, isError: isErrorGet } = useGetMeals();
+const { data: cartData } = useGetCarts();
+const { data: favoritesData } = useGetFavorites();
 const cDStore = useFavoritesStore();
+const {
+  toggleCartMutation,
+  toggleFavoriteMutation,
+  cartMap,
+  favoriteMap,
+  favorites,
+} = useMealMutations();
+
 // Input references and error handling
-
 const errorMessage = ref<string | null>(null);
-
 const meals = ref<IMeals[]>([]);
-const favorites = ref<IMeals[]>([]);
+// const favorites = ref<IMeals[]>([]);
 const carts = ref<IMeals[]>([]);
+const router = useRouter();
 
-const favoriteMap = ref<{ [mealId: string]: boolean }>({});
-const cartMap = ref<{ [mealId: string]: boolean }>({});
-
-// Loading and async state
 const isProcessing = ref(false);
 
-// Fetch meals
-const getItems = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No meals available.";
-    } else {
-      meals.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
+// // Handle adding/removing favorites
 
-      meals.value.sort((a, b) => {
-        const dateA = new Date(a.$createdAt);
-        const dateB = new Date(b.$createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching meals:", error);
-    errorMessage.value = "An error occurred while fetching meals.";
-  }
-};
-
-// Fetch favorites and update favorite map
-const getIsFavorite = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      favorites.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
-
-      // Populate the favoriteMap with the current favorite status
-      favorites.value.forEach((meal) => {
-        favoriteMap.value[meal.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
-
-const getIsCart = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_CART);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      carts.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
-
-      // Populate the favoriteMap with the current favorite status
-      carts.value.forEach((cart) => {
-        cartMap.value[cart.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
-// Check if a meal is in favorites
 const checkIsFavorite = (mealId: string) => {
-  return favoriteMap.value[mealId] || false; // Return false if not found
+  return favoriteMap.value[mealId] || false;
 };
-// Toggle favorite status
-const makeFavorite = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
-  isProcessing.value = true;
-  console.log(meal);
-  const IMealFavorite = checkIsFavorite(meal.$id);
-
-  try {
-    if (IMealFavorite) {
-      await cDStore.removeFavorite(meal.$id); // Remove from favorites
-    } else {
-      await cDStore.addFavorite(meal.$id); // Add to favorites
-    }
-
-    // Toggle the local state of the favorite map after operation
-    favoriteMap.value[meal.$id] = !IMealFavorite;
-  } catch (error) {
-    console.error("Error toggling favorite:", error);
-  } finally {
-    isProcessing.value = false; // Reset loading state
-  }
-};
-
 const checkIsCart = (mealId: string) => {
-  return cartMap.value[mealId] || false; // Return false if not found
+  return cartMap.value[mealId] || false;
 };
-// Toggle favorite status
-const makeCart = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
-  isProcessing.value = true;
-  console.log(meal);
-  const IMealCart = checkIsCart(meal.$id);
+onMounted(async () => {
+  const getCarts = await DB.listDocuments(DB_ID, COLLECTION_CART);
+  const getFavorites = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+  getCarts.documents
+    .filter((cart) => cart.user === cDStore.user.email)
+    .forEach((cart) => {
+      cartMap.value[cart.mealId] = true;
+    });
 
-  try {
-    if (IMealCart) {
-      await cDStore.removeFromCart(meal.$id); // Remove from favorites
-    } else {
-      await cDStore.addToCart(meal.$id); // Add to favorites
-    }
-
-    // Toggle the local state of the favorite map after operation
-    cartMap.value[meal.$id] = !IMealCart;
-  } catch (error) {
-    console.error("Error toggling favorite:", error);
-  } finally {
-    isProcessing.value = false; // Reset loading state
-  }
-};
-
-// Handle file change
-
-// Initial loading of data
-onMounted(() => {
-  getItems();
-  getIsFavorite();
-  getIsCart();
+  getFavorites.documents
+    .filter((favorite) => favorite.user === cDStore.user.email)
+    .forEach((favorite) => {
+      favoriteMap.value[favorite.mealId] = true;
+    });
 });
+
+const randomDataImages = ref("");
+// onMounted(async () => {
+//   // const data = await DB.listDocuments();
+//   // const randomIndex = Math.floor(Math.random() * data.documents.length);
+//   // randomDataImages.value = data.documents[randomIndex].url;
+// });
+
+// const getIteq = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
+
+// const ids = getIteq.documents.map((doc: any) => doc.$id);
+// console.log(ids);
+
+const isDataLoaded = ref(false);
+
+watch(
+  () => useAuthStore().isAuth,
+  async (isAuthenticated) => {
+    if (isAuthenticated && !isDataLoaded.value) {
+      try {
+        // Fetch user data once the user is authenticated
+        const userData = await fetchUserData();
+        // Transform the Document object into an IAuthStore object
+        const authData: IAuthStore = {
+          email: userData.email,
+          status: true, // Assuming the user is authenticated
+          name: userData.name,
+        };
+        // Set the data in the store or state
+        useAuthStore().setUserData(authData);
+
+        isDataLoaded.value = true; // Mark the data as loaded
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    }
+  },
+  { immediate: true } // Ensure the watcher runs immediately if the user is already logged in
+);
 </script>
 
 <template>
-  <div class="w-full mx-auto relative bg-black">
-    <!-- <div class="text-2xl test-light text-gray-300 p-4">Best for you</div> -->
+  <section class="w-full">
+    <div>
+      <NuxtImg :src="randomDataImages" class="w-full" />
+    </div>
+  </section>
 
-    <Carousel class="w-full max-w-[80vw] mx-auto">
-      <div class="absolute top-[50%] left-20 z-50">
-        <CarouselPrevious />
+  <div v-if="!data" class="flex justify-center items-center">
+    <div class="text-red-500">{{ errorMessage }}</div>
+  </div>
+
+  <div class="w-full mx-auto relative bg-black text-gray-200 py-4">
+    <Carousel class="w-full max-w-[95vw] mx-auto text-gray-400">
+      <div class="absolute bottom-[50%] left-20 z-50">
+        <CarouselPrevious class="w-14 h-14" />
       </div>
-      <div class="absolute top-[50%] right-20 z-50">
-        <CarouselNext />
+      <div class="absolute bottom-[50%] right-20 z-50 text-gray-400">
+        <CarouselNext class="w-14 h-14" />
       </div>
       <CarouselContent>
         <CarouselItem
-          v-for="meal in meals"
+          v-for="meal in data"
           :key="meal.$id"
           class="basis-1/3"
           :wrap-around="true"
         >
           <NuxtLink
             :to="`/edit/${meal.$id}`"
-            class="w-full h-full flex flex-col items-center justify-between"
+            class="w-full h-full flex flex-col items-center justify-between rounded-xl py-2"
           >
             <div class="w-full flex flex-col items-center">
               <p>{{ meal.name }}</p>
@@ -207,9 +150,9 @@ onMounted(() => {
             </div>
             <img :src="meal.image" alt="Meal image" />
 
-            <div class="flex flex-wrap gap-4 text-white py-4">
+            <div class="flex flex-wrap gap-4">
               <button
-                @click="makeFavorite(meal)"
+                @click.prevent="toggleFavoriteMutation.mutate(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon
@@ -223,7 +166,7 @@ onMounted(() => {
               </button>
 
               <button
-                @click="makeCart(meal)"
+                @click.prevent="toggleCartMutation.mutate(meal)"
                 class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
               >
                 <Icon
@@ -241,4 +184,6 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* Add your styles here */
+</style>

@@ -126,10 +126,10 @@ onMounted(() => {
 
 <template>
   <div class="flex justify-between items-center">
-    <div @click="openOrder = !openOrder" class="m-4">
+    <div @click="openOrder = !openOrder" class="fixed top-[3%] left-[5%]">
       <Icon :name="'ion:close'" class="w-8 h-8 text-bold text-white" />
     </div>
-    <div class="flex justify-center items-center pr-5">
+    <div class="flex justify-center items-center fixed top-[3%] right-[10%]">
       <div class="flex justify-end items-end">
         <div class="flex gap-2 items-center justify-center">
           <Icon
@@ -141,42 +141,28 @@ onMounted(() => {
       </div>
     </div>
   </div>
-  <section v-if="openOrder" class="w-full h-full">
+  <section class="w-full h-full">
     <div class="py-10"></div>
     <div class="border-t"></div>
     <div class="max-w-[95%] mx-auto relative">
       <div
         v-for="cart in data"
         :key="cart.$id"
-        class="basis-1/3 border-b"
+        class="basis-1/3"
         :wrap-around="true"
       >
         <div
-          class="w-full h-full flex flex-col items-center justify-center bg-transparent py-4"
+          class="w-[90%] h-full flex flex-col items-center justify-center bg-transparent py-4 mx-auto border rounded-3xl m-4"
         >
-          <div class="w-full flex flex-col items-center">
+          <div class="w-full flex flex-col items-center text-2xl">
             <p>{{ cart.name }}</p>
-            <p>{{ cart.price }}</p>
           </div>
           <img :src="cart.image" class="max-w-[200px]" alt="Meal image" />
-
+          <p class="text-xl">Price: {{ cart.price }}</p>
           <div class="flex gap-4 p-2">
-            <button
-              @click="makeFavorite(cart)"
-              class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-            >
-              <Icon
-                :name="
-                  checkIsFavorite(cart.$id)
-                    ? 'radix-icons:heart-filled'
-                    : 'radix-icons:heart'
-                "
-                class="w-5 h-5 text-bold"
-              />
-            </button>
             <button @click="makeCart(cart)">
               <div
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                class="flex items-center justify-center cursor-pointer border border-red-400 text-red-400 p-2 rounded-full"
               >
                 <Icon
                   @click="deleteCartMeal(cart.$id)"

@@ -20,11 +20,20 @@ import { openOrder } from "~/components/order/make-order.store";
 import { useGetCarts } from "@/composables/useGetCarts";
 import { useGetMeals } from "~/composables/useGetMeals";
 import { useDeleteCartMeal } from "~/composables/useDeleteCartMeal";
+import { useSidebarStore } from "~/store/sidebarStore";
+import { useGetFavorites } from "~/composables/useGetFavorites";
+
+import { useAuthStore } from "~/store/auth.store";
+import { fetchUserData } from "~/composables/fetchUserData"; // Import the function
+import type { IAuthStore } from "~/store/auth.store";
+import { get, set } from "@vueuse/core";
+
+import { useMealMutations } from "@/composables/useFavoriteToggle";
 
 // composables
 
 const {
-  data,
+  data: cart,
   isLoading: isLoadingCart,
   isError: isErrorCart,
   totalItems,
@@ -36,6 +45,17 @@ const {
   isError: isErrorDelete,
 } = useDeleteCartMeal();
 
+const { data, isLoading: isLoadingGet, isError: isErrorGet } = useGetMeals();
+const { data: cartData } = useGetCarts();
+const { data: favoritesData } = useGetFavorites();
+
+const {
+  toggleCartMutation,
+  toggleFavoriteMutation,
+  cartMap,
+  favoriteMap,
+  favorites,
+} = useMealMutations();
 const filteredCarts = ref<IMeals[]>([]);
 // Watch for changes in data and update filteredCarts
 watchEffect(() => {
@@ -47,6 +67,7 @@ const router = useRouter();
 // store
 const cDStore = useFavoritesStore();
 const removeStore = useRemoveItem();
+const { onOrderSidebarOpen } = useSidebarStore();
 // Input references and error handling
 const nameRef = ref("");
 const priceRef = ref(0);
@@ -54,11 +75,8 @@ const fileRef = ref<File | null>(null);
 const errorMessage = ref<string | null>(null);
 const isLoading = ref(false);
 const meals = ref<IMeals[]>([]);
-const favorites = ref<IMeals[]>([]);
-const cartMap = ref<{ [mealId: string]: boolean }>({});
-const carts = ref<IMeals[]>([]);
 
-const favoriteMap = ref<{ [mealId: string]: boolean }>({});
+const carts = ref<IMeals[]>([]);
 
 // Loading and async state
 const isProcessing = ref(false);
@@ -90,30 +108,6 @@ const getItems = async () => {
 };
 
 // Fetch favorites and update favorite map
-const getIsFavorite = async () => {
-  try {
-    const response = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
-    if (response.documents.length === 0) {
-      errorMessage.value = "No favorites available.";
-    } else {
-      favorites.value = response.documents.map((document) => ({
-        $id: document.$id,
-        name: document.name,
-        price: document.price,
-        $createdAt: document.$createdAt,
-        image: document.image,
-      })) as IMeals[];
-
-      // Populate the favoriteMap with the current favorite status
-      favorites.value.forEach((meal) => {
-        favoriteMap.value[meal.$id] = true;
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    errorMessage.value = "An error occurred while fetching favorites.";
-  }
-};
 
 const removeFromCart = async (id: string) => {
   try {
@@ -121,85 +115,53 @@ const removeFromCart = async (id: string) => {
     carts.value = carts.value.filter((cart) => cart.$id !== id);
     delete cartMap.value[id];
     // total.value = carts.value.length;
-    getIsFavorite();
   } catch (error) {
     console.error("Error deleting blog:", error);
   }
 };
-// Check if a meal is in favorites
-const checkIsCart = (mealId: string) => {
-  return cartMap.value[mealId] || false; // Return false if not found
-};
-// Toggle favorite status
-const makeCart = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
-  isProcessing.value = true;
-  console.log(meal);
-  const IMealFavorite = checkIsCart(meal.$id);
-
-  try {
-    if (IMealFavorite) {
-      await cDStore.removeFromCart(meal.$id); // Remove from favorites
-    } else {
-      await cDStore.addFavorite(meal.$id); // Add to favorites
-    }
-
-    // Toggle the local state of the favorite map after operation
-    favoriteMap.value[meal.$id] = !IMealFavorite;
-  } catch (error) {
-    console.error("Error toggling favorite:", error);
-  } finally {
-    isProcessing.value = false; // Reset loading state
-  }
-};
 const checkIsFavorite = (mealId: string) => {
-  return favoriteMap.value[mealId] || false; // Return false if not found
+  return favoriteMap.value[mealId] || false;
 };
-// Toggle favorite status
-const makeFavorite = async (meal: IMeals) => {
-  if (isProcessing.value) return; // Prevent multiple clicks while processing
-  isProcessing.value = true;
-  console.log(meal);
-  const IMealFavorite = checkIsFavorite(meal.$id);
-
-  try {
-    if (IMealFavorite) {
-      await removeStore.removeFromFavorite(meal.$id); // Remove from favorites
-    } else {
-      await cDStore.addFavorite(meal.$id); // Add to favorites
-    }
-
-    // Toggle the local state of the favorite map after operation
-    favoriteMap.value[meal.$id] = !IMealFavorite;
-  } catch (error) {
-    console.error("Error toggling favorite:", error);
-  } finally {
-    isProcessing.value = false; // Reset loading state
-  }
+const checkIsCart = (mealId: string) => {
+  return cartMap.value[mealId] || false;
 };
+onMounted(async () => {
+  const getCarts = await DB.listDocuments(DB_ID, COLLECTION_CART);
+  const getFavorites = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+  getCarts.documents
+    .filter((cart) => cart.user === cDStore.user.email)
+    .forEach((cart) => {
+      cartMap.value[cart.mealId] = true;
+    });
 
-// Initial loading of data
-onMounted(() => {
-  getItems();
-
-  getIsFavorite();
-  console.log(carts);
+  getFavorites.documents
+    .filter((favorite) => favorite.user === cDStore.user.email)
+    .forEach((favorite) => {
+      favoriteMap.value[favorite.mealId] = true;
+    });
 });
-
 watch(
   () => carts,
   async () => {
-    await setTimeout(() => {
-      getIsFavorite();
-    }, 1500);
+    await setTimeout(() => {}, 1500);
     console.log(carts);
   }
 );
-// const setTimeoutFunction = async () => {
-//   await setTimeout(() => {
-//     getIsCart();
-//   }, 1500);
-// };
+onMounted(async () => {
+  const getCarts = await DB.listDocuments(DB_ID, COLLECTION_CART);
+  const getFavorites = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+  getCarts.documents
+    .filter((cart) => cart.user === cDStore.user.email)
+    .forEach((cart) => {
+      cartMap.value[cart.mealId] = true;
+    });
+
+  getFavorites.documents
+    .filter((favorite) => favorite.user === cDStore.user.email)
+    .forEach((favorite) => {
+      favoriteMap.value[favorite.mealId] = true;
+    });
+});
 </script>
 
 <template>
@@ -213,18 +175,18 @@ watch(
   <section class="w-full h-full">
     <div class="text-3xl test-light text-gray-800 p-10 text-center">Cart</div>
 
-    <div class="flex justify-end items-end m-10">
+    <div class="flex justify-end items-end">
       <div
         v-if="!openOrder"
         @click="openOrder = !openOrder"
-        class="py-5 px-10 bg-blue-500 text-white rounded-lg flex items-center justify-center gap-4"
+        class="fixed top-[4%] right-[4%] z-50 py-5 px-10 bg-blue-500 text-white rounded-lg flex items-center justify-center gap-4 cursor-pointer hover:bg-blue-600 transition-all duration-300"
       >
         <Icon :name="'fluent:receipt-28-regular'" class="w-5 h-5 text-bold" />
         <div>Make an order: {{ totalItems }}</div>
       </div>
       <div
-        v-if="openOrder"
-        class="w-[calc(100%-75%)] h-full fixed top-0 right-0 z-50 bg-gray-400 overflow-auto"
+        class="md:translate-x-[100px] w-1/4 h-full fixed top-0 right-0 z-50 overflow-auto bg-gray-900 text-white transition-all duration-700"
+        :class="openOrder ? 'md:translate-x-[10px]' : 'md:translate-x-[400px]'"
       >
         <OrderMakeAnOrder />
       </div>
@@ -232,40 +194,27 @@ watch(
 
     <div class="py-10"></div>
     <div v-if="data?.length === 0">Add something to your cart</div>
-    <div v-else class="flex flex-wrap">
+    <div v-else class="max-w-[95%] flex flex-wrap mx-auto">
       <div
-        v-for="cart in data"
+        v-for="cart in cart"
         :key="cart.$id"
-        class="basis-1/3"
+        class="basis-1/4"
         :wrap-around="true"
       >
-        <div
+        <NuxtLink
+          :href="`/edit/${cart.mealId}`"
           v-if="cart.user === cDStore.user.email"
-          class="w-full h-full flex flex-col items-center justify-between"
+          class="max-w-[95%] h-full flex flex-col items-center justify-between bg-gray-900 text-gray-200 rounded-3xl py-4 border border-white relative"
         >
           <div class="w-full flex flex-col items-center">
-            <p>{{ cart.name }}</p>
-            <p>{{ cart.price }}</p>
+            <p class="text-xl">{{ cart.name }}</p>
           </div>
           <img :src="cart.image" alt="Meal image" />
-
-          <div class="flex gap-4 p-2">
-            <button
-              @click="makeFavorite(cart)"
-              class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-            >
-              <Icon
-                :name="
-                  checkIsFavorite(cart.$id)
-                    ? 'radix-icons:heart-filled'
-                    : 'radix-icons:heart'
-                "
-                class="w-5 h-5 text-bold"
-              />
-            </button>
-            <button @click="makeCart(cart)">
+          <p class="text-xl">Price: {{ cart.price }}</p>
+          <div class="flex gap-4 p-2 absolute top-2 left-2">
+            <button @click.prevent="toggleCartMutation.mutate(cart)">
               <div
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                class="flex items-center justify-center cursor-pointer border border-red-400 text-red-400 p-2 rounded-full"
               >
                 <Icon
                   @click.prevent="deleteCartMeal(cart.$id)"
@@ -275,7 +224,7 @@ watch(
               </div>
             </button>
           </div>
-        </div>
+        </NuxtLink>
       </div>
     </div>
     <div class="py-20"></div>

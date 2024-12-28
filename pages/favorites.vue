@@ -16,10 +16,11 @@ import type { IMeals } from "~/types/order.types";
 import { useFavoritesStore } from "~/store/createDocument.store";
 import { useRouter } from "vue-router";
 import { openOrder } from "~/components/order/make-order.store";
-
+import { useDeleteFavoriteMeal } from "#build/imports";
 import { useCreateMeal } from "~/composables/useCreateMeal";
 import { useGetMeals } from "~/composables/useGetMeals";
 import { useGetFavorites } from "~/composables/useGetFavorites";
+import { useMealMutations } from "@/composables/useFavoriteToggle";
 
 import {
   Carousel,
@@ -35,6 +36,12 @@ const router = useRouter();
 
 // composables
 const { data, isLoading, isError } = useGetFavorites();
+const {
+  mutate: deleteFavorite,
+  isPending: isPendingDelete,
+  isError: isErrorDelete,
+} = useDeleteFavoriteMeal();
+const { toggleCartMutation, toggleFavoriteMutation } = useMealMutations();
 // store
 const cDStore = useFavoritesStore();
 const removeStore = useRemoveItem();
@@ -210,45 +217,37 @@ onMounted(() => {
     Favorites
   </div>
   <div v-if="data?.length === 0">Add something to your favorites</div>
-  <div v-else class="flex flex-wrap">
+  <div v-else class="w-[95%] flex flex-wrap mx-auto">
     <div
       v-for="favorite in data"
       :key="favorite.$id"
-      class="basis-1/3"
+      class="basis-1/4"
       :wrap-around="true"
     >
-      <div class="w-full h-full flex flex-col items-center justify-between">
+      <NuxtLink
+        :href="`/edit/${favorite.mealId}`"
+        v-if="favorite.user === cDStore.user.email"
+        class="max-w-[95%] h-full flex flex-col items-center justify-between bg-gray-900 text-gray-100 rounded-3xl py-4 border border-white relative"
+      >
         <div class="w-full flex flex-col items-center">
-          <p>{{ favorite.name }}</p>
-          <p>{{ favorite.price }}</p>
+          <p class="text-xl">{{ favorite.name }}</p>
         </div>
         <img :src="favorite.image" alt="Meal image" />
-
-        <div class="flex gap-4 p-2">
-          <button
-            @click="removeStore.removeFromFavorite(favorite.$id)"
-            class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-          >
-            <Icon
-              @click="checkIsFavorite(favorite.$id)"
-              :name="'radix-icons:heart-filled'"
-              class="w-5 h-5 text-bold"
-            />
-          </button>
-          <button>
+        <p class="text-xl">Price:{{ favorite.price }}</p>
+        <div class="flex gap-4 p-2 absolute top-2 left-2">
+          <button @click.prevent="toggleFavoriteMutation.mutate(favorite)">
             <div
-              class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+              class="flex items-center justify-center cursor-pointer border border-red-400 text-red-400 p-2 rounded-full"
             >
               <Icon
-                :name="
-                  checkIsCart(favorite.$id) ? 'ion:cart' : 'ion:cart-outline'
-                "
+                @click.prevent="deleteFavorite(favorite.$id)"
+                :name="'radix-icons:heart-filled'"
                 class="w-5 h-5 text-bold"
               />
             </div>
           </button>
         </div>
-      </div>
+      </NuxtLink>
     </div>
   </div>
 

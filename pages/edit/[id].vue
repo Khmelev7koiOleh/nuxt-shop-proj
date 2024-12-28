@@ -120,7 +120,7 @@ onMounted(async () => {
         </div>
 
         <div
-          class="flex flex-col justify-center items-center gap-8 text-base font-bold text-center break-words w-full text-black border rounded-xl py-8 px-8"
+          class="flex flex-col justify-center items-center gap-8 text-base font-bold text-center break-words w-full text-black border-l py-8 px-8"
         >
           <div>
             <h2 class="text-2xl font-bold text-center border-b">
@@ -137,19 +137,26 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <div v-if="meal" class="w-full">
-        <div class="border-b flex items-center gap-2">
+    </div>
+    <div
+      class="flex flex-col items-center justify-center w-full h-full mx-auto gap-16 py-8"
+    >
+      <div v-if="meal">
+        <div @click="onOpen = !onOpen" class="flex items-center gap-4">
           <p class="text-2xl font-light">Recept</p>
-          <button v-if="!onOpen" @click="onOpen = !onOpen">
+          <button v-if="!onOpen">
             <Icon name="uiw:plus" class="flex items-center w-7 h-7" />
           </button>
 
-          <button v-if="onOpen" @click="onOpen = !onOpen">
+          <button v-if="onOpen">
             <Icon name="uiw:close" class="flex items-center w-7 h-7" />
           </button>
         </div>
       </div>
-      <div v-if="onOpen && meal">
+      <div
+        v-if="onOpen && meal"
+        class="flex justify-center items-center w-full"
+      >
         <h2 class="text-sm font-light text-format">
           {{ meal.description }}
         </h2>

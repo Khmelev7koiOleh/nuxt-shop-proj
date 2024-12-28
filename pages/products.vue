@@ -17,6 +17,62 @@ import { useCreateMeal } from "~/composables/useCreateMeal";
 import { useGetMeals } from "~/composables/useGetMeals";
 import { useDeleteMeal } from "~/composables/useDeleteMeal";
 import { useResetForm } from "~/composables/resetForm";
+import { useGetFavorites } from "~/composables/useGetFavorites";
+import { useGetCarts } from "~/composables/useGetCarts";
+import { useAuthStore } from "~/store/auth.store";
+import { fetchUserData } from "~/composables/fetchUserData"; // Import the function
+import type { IAuthStore } from "~/store/auth.store";
+import { get, set } from "@vueuse/core";
+import { useRouter } from "vue-router";
+import { useMealMutations } from "@/composables/useFavoriteToggle";
+import { useFavoritesStore } from "~/store/createDocument.store";
+
+// Composables
+// const { mutate, isPending, isError } = useCreateMeal();
+const { data, isLoading, isError: isErrorGet } = useGetMeals();
+const { data: cartData } = useGetCarts();
+const { data: favoritesData } = useGetFavorites();
+const cDStore = useFavoritesStore();
+const {
+  toggleCartMutation,
+  toggleFavoriteMutation,
+  cartMap,
+  favoriteMap,
+  favorites,
+} = useMealMutations();
+
+// Input references and error handling
+const errorMessage = ref<string | null>(null);
+const meals = ref<IMeals[]>([]);
+// const favorites = ref<IMeals[]>([]);
+const carts = ref<IMeals[]>([]);
+const router = useRouter();
+
+const isProcessing = ref(false);
+
+// // Handle adding/removing favorites
+
+const checkIsFavorite = (mealId: string) => {
+  return favoriteMap.value[mealId] || false;
+};
+const checkIsCart = (mealId: string) => {
+  return cartMap.value[mealId] || false;
+};
+onMounted(async () => {
+  const getCarts = await DB.listDocuments(DB_ID, COLLECTION_CART);
+  const getFavorites = await DB.listDocuments(DB_ID, COLLECTION_FAVORITES);
+  getCarts.documents
+    .filter((cart) => cart.user === cDStore.user.email)
+    .forEach((cart) => {
+      cartMap.value[cart.mealId] = true;
+    });
+
+  getFavorites.documents
+    .filter((favorite) => favorite.user === cDStore.user.email)
+    .forEach((favorite) => {
+      favoriteMap.value[favorite.mealId] = true;
+    });
+});
 
 const { resetForm, nameRef, priceRef, descriptionRef, selectedCategory } =
   useResetForm();
@@ -25,14 +81,11 @@ const { resetForm, nameRef, priceRef, descriptionRef, selectedCategory } =
 
 const fileRef = ref<File | null>(null);
 
-const errorMessage = ref<string | null>(null);
-const isLoading = ref(false);
 const orders = ref<IMeals[]>([]);
 const filteredOrders = ref<IMeals[]>([]);
 const onOpen = ref(false);
 const isAdmin = ref(false);
 
-const { data, isLoading: isLoadingGet, isError: isErrorGet } = useGetMeals();
 const {
   mutate,
   isPending: isPendingDelete,
@@ -193,30 +246,6 @@ const onSubmit = () => {
   resetForm();
 };
 
-// Delete order
-// const deleteOrder = async (id: string) => {
-//   try {
-//     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
-//     await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
-//     await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
-
-//     getItems(); // Refresh items after deletion
-//   } catch (error) {
-//     console.error("Error deleting order:", error);
-//   }
-// };
-// const deleteOrder = async (id: string) => {
-//   try {
-//     await DB.deleteDocument(DB_ID, COLLECTION_MEALS, id);
-//     await DB.deleteDocument(DB_ID, COLLECTION_FAVORITES, id);
-//     await DB.deleteDocument(DB_ID, COLLECTION_CART, id);
-
-//     // getItems(); // Refresh items after deletion
-//   } catch (error) {
-//     console.error("Error deleting order:", error);
-//   }
-// };
-
 const deleteOrder = (mealId: string) => {
   mutate(mealId);
   console.log(mealId);
@@ -289,33 +318,55 @@ onMounted(async () => {
 
   <div class="max-w-[95%] mx-auto flex flex-wrap my-10">
     <UiCard
-      v-for="order in filteredOrders"
-      :key="order.$id"
+      v-for="meal in filteredOrders"
+      :key="meal.$id"
       class="basis-1/4"
       :wrap-around="true"
     >
       <NuxtLink
-        :href="`/edit/${order.$id}`"
-        class="w-full h-full flex flex-col justify-between items-center border border-gray-300 rounded-3xl bg-black py-4 relative"
+        :href="`/edit/${meal.$id}`"
+        class="max-w-[95%] h-full flex flex-col justify-between items-center gap-2 border border-gray-300 rounded-3xl bg-black py-4 relative"
       >
         <div v-if="isAdmin" class="absolute top-4 left-4">
           <button
-            @click.prevent="deleteOrder(order.$id)"
+            @click.prevent="deleteOrder(meal.$id)"
             class="bg-red-500 text-white p-1 flex items-center justify-center rounded-full"
           >
             <Icon :name="'ph:trash'" class="w-5 h-5 text-bold" />
           </button>
         </div>
         <div class="w-full h-full flex flex-col justify-between items-center">
-          <p class="text-gray-100">{{ order.name }}</p>
-          <img :src="order.image" alt="Order image" />
-          <p class="text-gray-100">Price:{{ order.price }}</p>
+          <p class="text-gray-100 text-2xl">{{ meal.name }}</p>
+          <img :src="meal.image" alt="Order image" />
+          <p class="text-gray-100 text-xl border-b w-full flex justify-center">
+            Price:{{ meal.price }}
+          </p>
         </div>
-        <div class="py-4"></div>
-        <div
-          class="w-2/3 flex items-center justify-center bg-green-900 text-gray-100 rounded-lg py-1 px-2"
-        >
-          View
+
+        <div class="flex flex-wrap gap-4 text-white">
+          <button
+            @click.prevent="toggleFavoriteMutation.mutate(meal)"
+            class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+          >
+            <Icon
+              :name="
+                checkIsFavorite(meal.$id)
+                  ? 'radix-icons:heart-filled'
+                  : 'radix-icons:heart'
+              "
+              class="w-5 h-5 text-bold"
+            />
+          </button>
+
+          <button
+            @click.prevent="toggleCartMutation.mutate(meal)"
+            class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+          >
+            <Icon
+              :name="checkIsCart(meal.$id) ? 'ion:cart' : 'ion:cart-outline'"
+              class="w-5 h-5 text-bold"
+            />
+          </button>
         </div>
       </NuxtLink>
     </UiCard>

@@ -24,3 +24,18 @@ export function useGetMeals() {
     },
   });
 }
+
+export function useGetNewestMeals() {
+  return useQuery({
+    queryKey: ["meals"],
+    queryFn: () => DB.listDocuments(DB_ID, COLLECTION_MEALS),
+    select(data) {
+      const meals = data.documents as unknown as IMeals[];
+      const newest = meals.sort(
+        (a, b) =>
+          new Date(b.$createdAt).getTime() - new Date(a.$createdAt).getTime()
+      );
+      return newest;
+    },
+  });
+}

@@ -3,6 +3,7 @@ import { DB_ID, COLLECTION_CART } from "@/app.constants";
 import { DB } from "@/lib/appwrite";
 import { useFavoritesStore } from "~/store/createDocument.store"; // Store with user data
 import type { IMeals } from "~/types/order.types";
+import { computed } from "vue";
 
 export function useGetCarts() {
   const cDStore = useFavoritesStore(); // Accessing the store with user email
@@ -16,9 +17,11 @@ export function useGetCarts() {
       const filteredCarts = carts.filter(
         (document) => document.user === cDStore.user.email
       );
-
       return filteredCarts as IMeals[];
     },
+    refetchOnWindowFocus: true, // Refetch data when the window is focused
+    refetchOnMount: true, // Refetch data when the component mounts
+    retry: false, // Disable retries to prevent unnecessary refetches
   });
 
   const totalItems = computed(() => (data.value ? data.value.length : 0));
