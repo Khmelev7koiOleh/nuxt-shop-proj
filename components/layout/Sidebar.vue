@@ -54,7 +54,7 @@ onMounted(() => {
 
 <template>
   <section
-    class="w-full bg-slate-700 text-gray-100 text-xl min-h-[100%] flex flex-col justify-center items-center"
+    class="w-full bg-slate-700 text-gray-100 text-xl h-screen flex flex-col justify-center items-center"
   >
     <button @click="toggleSidebar" class="my-4">
       <Icon
@@ -86,6 +86,7 @@ onMounted(() => {
         <Icon name="line-md:logout" size="25" />
       </div>
     </button>
+    <div class="py-10"></div>
   </section>
 </template>
 
