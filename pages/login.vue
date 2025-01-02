@@ -6,32 +6,35 @@ import {
 } from "~/store/auth.store";
 import { v4 as uuid } from "uuid";
 import { useSeoMeta, useRouter, ref, watch } from "#imports";
-import { account } from "~/lib/appwrite";
-import { useMutation } from "@tanstack/vue-query";
+
 import { useLogin } from "~/composables/useLogin";
 import { useRegister } from "~/composables/useRegister";
 
 const { mutate: loginMutate } = useLogin();
 const { mutate: registerMutate } = useRegister();
 
-const backup = ref(false);
-// Example usage:
-
 useSeoMeta({
   title: "Login",
 });
-const login = () => {
+const login = async () => {
   loginMutate({ email: emailRef.value, password: passwordRef.value });
+  if (errorMessage) {
+    errorMessage.value = "Check your credentials";
+  }
 };
 
-const register = () => {
+const register = async () => {
   registerMutate({
     email: emailRef.value,
     password: passwordRef.value,
     name: nameRef.value,
   });
+  if (errorMessage) {
+    errorMessage.value =
+      "All fields are required and must be unique. Please check your credentials";
+  }
 };
-const logAsAdmin = () => {
+const logAsAdmin = async () => {
   loginMutate({ email: "admin@gmail.com", password: "11111111" });
 };
 const isSidebarOpen = useIsSidebarOpenStore();
@@ -39,9 +42,8 @@ const emailRef = ref("");
 const passwordRef = ref("");
 const nameRef = ref("");
 
-const isLoadingStore = useIsLoadingStore();
 const authStore = useAuthStore();
-const router = useRouter();
+
 const errorMessage = ref<string | null>(null);
 
 onMounted(() => {

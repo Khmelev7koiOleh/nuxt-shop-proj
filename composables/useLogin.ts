@@ -53,9 +53,10 @@ export function useLogin() {
     onSuccess() {
       isLoadingStore.set(false);
 
-      // router.push("/products"); // Redirect to the home page after successful login
-      // window.location.reload();
       router.push("/"); // Redirect to the home page after successful login
+      setTimeout(() => {
+        window.location.reload();
+      }, 10);
     },
     onError(error) {
       console.error("Login error:", error);
