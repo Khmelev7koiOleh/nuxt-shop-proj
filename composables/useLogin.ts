@@ -103,6 +103,10 @@ export function useUpdateCard() {
     },
     onSuccess() {
       isLoadingStore.set(false);
+      router.push("/");
+      setTimeout(() => {
+        window.location.reload();
+      }, 10);
     },
     onError(error) {
       console.error("Card update error:", error);
