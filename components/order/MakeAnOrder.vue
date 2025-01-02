@@ -125,40 +125,34 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex justify-between items-center">
-    <div @click="openOrder = !openOrder" class="fixed top-[3%] left-[5%]">
+  <div class="flex flex-col md:flex-row justify-end items-center relative">
+    <div @click="openOrder = !openOrder" class="absolute top-4 left-4">
       <Icon :name="'ion:close'" class="w-8 h-8 text-bold text-white" />
     </div>
-    <div class="flex justify-center items-center fixed top-[3%] right-[10%]">
-      <div class="flex justify-end items-end">
-        <div class="flex gap-2 items-center justify-center">
-          <Icon
-            :name="'fluent:receipt-28-regular'"
-            class="w-5 h-5 text-bold text-white"
-          />
-          <div class="text-white">Total: {{ totalPrice }}</div>
-        </div>
-      </div>
+
+    <div class="w-full flex justify-end items-center p-6">
+      <Icon
+        :name="'fluent:receipt-28-regular'"
+        class="w-5 h-5 text-bold text-white"
+      />
+      <div class="text-white text-lg md:text-lg">Total: {{ totalPrice }}</div>
     </div>
   </div>
   <section class="w-full h-full">
     <div class="py-10"></div>
     <div class="border-t"></div>
     <div class="max-w-[95%] mx-auto relative">
-      <div
-        v-for="cart in data"
-        :key="cart.$id"
-        class="basis-1/3"
-        :wrap-around="true"
-      >
+      <div v-for="cart in data" :key="cart.$id" :wrap-around="true">
         <div
-          class="w-[90%] h-full flex flex-col items-center justify-center bg-transparent py-4 mx-auto border rounded-3xl m-4"
+          class="w-[95%] h-full flex flex-col items-center justify-center bg-transparent py-4 mx-auto m-4 border-b"
         >
-          <div class="w-full flex flex-col items-center text-2xl">
+          <div
+            class="w-full flex flex-col items-center text-xl md:text-2xl wrap-text"
+          >
             <p>{{ cart.name }}</p>
           </div>
-          <img :src="cart.image" class="max-w-[200px]" alt="Meal image" />
-          <p class="text-xl">Price: {{ cart.price }}</p>
+          <img :src="cart.image" class="max-w-[100%]" alt="Meal image" />
+          <p class="text-md md:text-xl wrap-text">Price: {{ cart.price }}</p>
           <div class="flex gap-4 p-2">
             <button @click="makeCart(cart)">
               <div
@@ -197,7 +191,7 @@ onMounted(() => {
     >
       <button
         @click="transferCartToOrders()"
-        class="cursor-pointer bg-blue-400 border border-blue-400 p-2 rounded-lg"
+        class="w-[80%] flex items-center justify-center cursor-pointer text-sm md:text-lg bg-white text-gray-900 border border-blue-900 p-2 rounded-md md:rounded-lg"
       >
         Make an order
       </button>
@@ -206,5 +200,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Add your styles here */
+.wrap-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  width: 100%;
+  text-align: center;
+}
 </style>

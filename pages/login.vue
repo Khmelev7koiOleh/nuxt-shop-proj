@@ -31,7 +31,9 @@ const register = () => {
     name: nameRef.value,
   });
 };
-
+const logAsAdmin = () => {
+  loginMutate({ email: "admin@gmail.com", password: "11111111" });
+};
 const isSidebarOpen = useIsSidebarOpenStore();
 const emailRef = ref("");
 const passwordRef = ref("");
@@ -42,71 +44,12 @@ const authStore = useAuthStore();
 const router = useRouter();
 const errorMessage = ref<string | null>(null);
 
-// Function to handle login
-// const login = async () => {
-//   try {
-//     isLoadingStore.set(true);
-//     await account.createEmailPasswordSession(emailRef.value, passwordRef.value);
-
-//     const response = await account.get();
-//     if (response) {
-//       authStore.set({
-//         email: response.email,
-//         status: true,
-//         name: response.name,
-//       });
-//       isSidebarOpen.set(true);
-//       await router.push("/");
-//     }
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     errorMessage.value = "Login failed. Please check your credentials.";
-//   } finally {
-//     isLoadingStore.set(false);
-//   }
-// };
-
-// // Function to handle registration
-// const register = async () => {
-//   try {
-//     isLoadingStore.set(true);
-//     await account.create(
-//       uuid(),
-//       emailRef.value,
-//       passwordRef.value,
-//       nameRef.value
-//     );
-//     await login();
-//     isSidebarOpen.set(true);
-//   } catch (error) {
-//     console.error("Registration error:", error);
-//     errorMessage.value = "Registration failed. Please try again.";
-//   } finally {
-//     isLoadingStore.set(false);
-//   }
-// };
 onMounted(() => {
   if (performance.navigation.type === 1) {
     isSidebarOpen.set(true);
   }
 });
 
-// onMounted(() => {
-//   if (window.location.pathname === "/login") {
-//     const preventReload = (event: BeforeUnloadEvent) => {
-//       event.preventDefault();
-//       event.returnValue = ""; // Required for some browsers
-//       return "";
-//     };
-
-//     window.addEventListener("beforeunload", preventReload);
-
-//     // Cleanup listener when leaving the page
-//     onBeforeUnmount(() => {
-//       window.removeEventListener("beforeunload", preventReload);
-//     });
-//   }
-// });
 // Watcher for debugging (optional)
 watch(isSidebarOpen, () => {
   console.log("isSidebarOpen:", isSidebarOpen);
@@ -145,6 +88,13 @@ watch(isSidebarOpen, () => {
           class="mb-4 placeholder:text-gray-300 text-white"
         />
         <div class="flex justify-center items-center gap-5">
+          <div
+            @click="logAsAdmin"
+            class="text-white flex bg-gray-800 t rounded hover:bg-gray-700 px-2 py-1"
+          >
+            <Icon name="ion:key" class="w-6 h-6" />
+            <p>Admin</p>
+          </div>
           <UiButton
             type="button"
             class="bg-gray-800 text-white rounded hover:bg-gray-700"

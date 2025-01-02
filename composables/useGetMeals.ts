@@ -18,9 +18,18 @@ export function useGetMeals() {
   return useQuery({
     queryKey: ["meals"],
     queryFn: () => DB.listDocuments(DB_ID, COLLECTION_MEALS),
+
     select(data) {
       const meals = data.documents as unknown as IMeals[];
-      return meals;
+      const shuffledMeals = [...meals]; // create a copy of the original array
+      for (let i = shuffledMeals.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledMeals[i], shuffledMeals[j]] = [
+          shuffledMeals[j],
+          shuffledMeals[i],
+        ];
+      }
+      return shuffledMeals;
     },
   });
 }

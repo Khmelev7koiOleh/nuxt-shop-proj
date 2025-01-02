@@ -51,19 +51,6 @@ const getBlogById = async () => {
   }
 };
 
-const deleteCard = async () => {
-  try {
-    onDelete.value = true;
-
-    await DB.deleteDocument(DB_ID, COLLECTION_MEALS, mealId);
-    // await DB.deleteDocument(DB_ID, COLLECTION_COMMENTS, blogId);
-    console.log("Blog deleted successfully.");
-  } catch (error) {
-    console.error("Error deleting blog:", error);
-  }
-  onDelete.value = false;
-};
-
 watch(meal && onDelete, async () => {
   await getBlogById(); // Ruf die Blogs erneut ab, wenn sie sich ändern
   router.push("/blog");
@@ -98,39 +85,32 @@ onMounted(async () => {
           >
             {{ dayjs(meal.$createdAt).format("DD-MM-YYYY") }}
           </div>
-          <!-- <button
-            v-if="user.email === meal.user"
-            class="flex rounded-md px-3 py-1 bg-red-600 text-white gap-2 items-center hover:bg-red-500 transition-all"
-            @click="deleteCard"
-          >
-            <div>Delete</div>
-
-            <Icon name="radix-icons:trash" size="20" />
-          </button> -->
         </div>
       </div>
 
       <!-- Blog content -->
       <div
         v-if="meal"
-        class="min-h-[70vh] flex gap-8 justify-around items-center overflow-x-auto"
+        class="min-h-[70vh] flex flex-col justify-center md:flex-row md:justify-around items-center overflow-x-auto"
       >
         <div class="min-w-[45%]">
           <img :src="meal.image" alt="Blog Image" class="w-full" />
         </div>
 
         <div
-          class="flex flex-col justify-center items-center gap-8 text-base font-bold text-center break-words w-full text-black border-l py-8 px-8"
+          class="flex flex-col justify-center items-center gap-8 text-base font-bold text-center break-words w-full text-black md:border-l md:py-8 md:px-8 px-2 py-1"
         >
           <div>
             <h2 class="text-2xl font-bold text-center border-b">
               {{ meal.name }}
             </h2>
           </div>
-
+          <h2 class="text-sm text-center font-light text-format">
+            {{ meal.description }}
+          </h2>
           <div>
             <h2
-              class="text-xl font-light text-center border-b border rounded-xl bg-green-900 px-2 py-1 text-gray-100"
+              class="md:text-xl text-md font-light text-center border-b border rounded-md bg-green-900 px-2 py-1 text-gray-100"
             >
               Price: {{ meal.price }}
             </h2>
@@ -157,7 +137,7 @@ onMounted(async () => {
         v-if="onOpen && meal"
         class="flex justify-center items-center w-full"
       >
-        <h2 class="text-sm font-light text-format">
+        <h2 class="text-sm text-center font-light text-format">
           {{ meal.description }}
         </h2>
       </div>

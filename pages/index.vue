@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
-import {
-  DB_ID,
-  COLLECTION_MEALS,
-  COLLECTION_FAVORITES,
-  COLLECTION_CART,
-} from "@/app.constants";
+import axios from "axios";
+import { DB_ID, COLLECTION_FAVORITES, COLLECTION_CART } from "@/app.constants";
 import { DB } from "@/lib/appwrite";
-import { useMutation } from "@tanstack/vue-query";
+
 import { useFavoritesStore } from "~/store/createDocument.store";
 import { useCreateMeal } from "~/composables/useCreateMeal";
-import { useGetMeals } from "~/composables/useGetMeals";
+import { useGetMeals, useGetNewestMeals } from "~/composables/useGetMeals";
 import type { IMeals } from "~/types/order.types";
-import { v4 as uuid } from "uuid";
+
 import { Carousel } from "~/components/ui/carousel";
 import { CarouselContent } from "~/components/ui/carousel";
 import { CarouselItem } from "~/components/ui/carousel";
@@ -23,9 +19,8 @@ import { useGetCarts } from "~/composables/useGetCarts";
 import { useAuthStore } from "~/store/auth.store";
 import { fetchUserData } from "~/composables/fetchUserData"; // Import the function
 import type { IAuthStore } from "~/store/auth.store";
-import { get, set } from "@vueuse/core";
 import { useRouter } from "vue-router";
-import { useMealMutations } from "@/composables/useFavoriteToggle";
+import { rand } from "@vueuse/core";
 
 // Composables
 // const { mutate, isPending, isError } = useCreateMeal();
@@ -35,8 +30,6 @@ const {
   isLoading: isLoadingGet,
   isError: isErrorNewestGet,
 } = useGetNewestMeals();
-const { data: cartData } = useGetCarts();
-const { data: favoritesData } = useGetFavorites();
 const cDStore = useFavoritesStore();
 const {
   toggleCartMutation,
@@ -48,10 +41,9 @@ const {
 
 // Input references and error handling
 const errorMessage = ref<string | null>(null);
-const meals = ref<IMeals[]>([]);
-// const favorites = ref<IMeals[]>([]);
-const carts = ref<IMeals[]>([]);
-const router = useRouter();
+
+let onValueChange = ref(false);
+let onValueChangeTwo = ref(false);
 const randomImage = ref("");
 const randomImageTwo = ref("");
 const randomImageThree = ref("");
@@ -85,7 +77,6 @@ const randomDataImagesThree = ref({
   url7: "./f39ef68a4f1d6417cf34072991c4306225f66e9a-2000x1000.webp",
   url8: "./DALL·E 2024-12-28 04.42.20 - A vibrant and visually appealing fast food menu layout displayed on a digital screen, featuring sections for burgers, fries, drinks, and desserts. Eac.webp",
 });
-const isProcessing = ref(false);
 
 // // Handle adding/removing favorites
 
@@ -116,14 +107,6 @@ onMounted(async () => {
     .forEach((favorite) => {
       favoriteMap.value[favorite.mealId] = true;
     });
-
-  randomImage.value = Object.values(randomDataImages.value)[
-    Math.floor(Math.random() * Object.keys(randomDataImages.value).length)
-  ];
-
-  randomImageTwo.value = Object.values(randomDataImagesTwo.value)[
-    Math.floor(Math.random() * Object.keys(randomDataImagesTwo.value).length)
-  ];
 });
 
 const isDataLoaded = ref(false);
@@ -152,7 +135,7 @@ watch(
   },
   { immediate: true } // Ensure the watcher runs immediately if the user is already logged in
 );
-const randomImageInterval = setInterval(() => {
+const updateRandomImages = () => {
   randomImageTwo.value = Object.values(randomDataImagesTwo.value)[
     Math.floor(Math.random() * Object.keys(randomDataImagesTwo.value).length)
   ];
@@ -162,31 +145,60 @@ const randomImageInterval = setInterval(() => {
   randomImageThree.value = Object.values(randomDataImagesThree.value)[
     Math.floor(Math.random() * Object.keys(randomDataImagesThree.value).length)
   ];
-}, 5000);
+  onValueChange.value = !onValueChange.value;
+
+  setTimeout(updateRandomImages, 5000);
+};
+
+updateRandomImages();
 </script>
 
 <template>
-  <div class="text-3xl test-light text-gray-900 p-10 text-center">
-    Dashboard
-  </div>
-
+  <NuxtLink to="/products" class="w-full">
+    <div
+      :class="
+        onValueChange
+          ? 'transition-all -translate-y-[300px] md:translate-x-[1400px] opacity-0 duration-1000'
+          : 'transition-all translate-y-[0px] md:translate-x-[0px] opacity-100 duration-1000'
+      "
+      class="justify-around flex fixed"
+    >
+      <img
+        class="min-w-[100%] min-h-[55vh] md:max-h-[75vh] mx-auto md:flex object-cover"
+        :src="randomImage"
+      />
+    </div>
+    <div
+      :class="
+        !onValueChange
+          ? 'transition-all -translate-y-[300px] md:translate-x-[1400px] opacity-0 duration-1000'
+          : 'transition-all translate-y-[0px] md:translate-x-[0px] opacity-100 duration-1000'
+      "
+      class="justify-around flex"
+    >
+      <img
+        class="min-w-[100%] min-h-[55vh] md:max-h-[75vh] mx-auto md:flex object-cover"
+        :src="randomImageTwo"
+      />
+    </div>
+  </NuxtLink>
   <div class="text-2xl test-light text-red-500 p-10">Newest</div>
 
   <div v-if="!data" class="w-[95vw] flex justify-center items-center">
     <div class="text-red-500">{{ errorMessage }}</div>
   </div>
 
-  <div class="relative max-w-[95%] mx-auto">
+  <div class="relative max-w-[90vw] mx-auto">
     <Carousel>
       <div class="absolute -top-10 right-20 text-black">
         <CarouselPrevious class="bg-black text-gray-100" />
         <CarouselNext class="bg-black text-gray-100" />
       </div>
-      <CarouselContent class="max-w-[95vw]">
+      <CarouselContent class="max-w-[100vw]">
         <CarouselItem
           v-for="meal in newest"
           :key="meal.$id"
-          class="basis-1/5"
+          class="w-full basis-1/2 md:basis-1/5"
           :wrap-around="true"
         >
           <NuxtLink
@@ -237,26 +249,23 @@ const randomImageInterval = setInterval(() => {
   <div class="py-20">
     <div class="text-2xl test-light text-gray-800 p-10">What is new?</div>
     <NuxtLink to="/products" class="w-full">
-      <div class="basis-8 flex flex-wrap justify-around">
-        <img
-          class="w-full object-cover max-w-[30vw] max-h-[50vh] mx-auto"
-          :src="randomImage"
-        />
+      <div class="basis-1/3 flex max-w-[100%]">
+        <img class="max-w-[33vw] mx-auto md:flex hidden" :src="randomImage" />
 
         <img
-          class="w-full object-cover max-w-[30vw] max-h-[50vh] mx-auto"
+          class="max-w-[90vw] md:max-w-[29vw] mx-auto md:flex"
           :src="randomImageTwo"
         />
 
         <img
-          class="w-full object-cover max-w-[30vw] max-h-[50vh] mx-auto"
+          class="max-w-[33vw] mx-auto md:flex hidden"
           :src="randomImageThree"
         />
       </div>
     </NuxtLink>
   </div>
   <div class="text-2xl test-light text-gray-800 p-10">Best for you</div>
-  <div class="relative max-w-[95%] mx-auto">
+  <div class="relative max-w-[90vw] mx-auto">
     <Carousel>
       <div class="absolute -top-10 right-20 text-black">
         <CarouselPrevious class="bg-black text-gray-100" />
@@ -266,7 +275,7 @@ const randomImageInterval = setInterval(() => {
         <CarouselItem
           v-for="meal in data"
           :key="meal.$id"
-          class="basis-1/5"
+          class="basis-1/2 md:basis-1/5"
           :wrap-around="true"
         >
           <NuxtLink
@@ -314,7 +323,10 @@ const randomImageInterval = setInterval(() => {
     </Carousel>
   </div>
   <div class="p-20"></div>
-  <NuxtLink to="/products" class="w-[90%] flex justify-between gap-4 mx-auto">
+  <NuxtLink
+    to="/products"
+    class="w-[90%] h-auto md:flex md:flex-nowrap flex flex-wrap justify-between gap-12 mx-auto"
+  >
     <div class="flex flex-col gap-4">
       <img src="../public/allFrom4.99.jpg" alt="" />
       <h2 class="text-2xl font-bold">All this from €4.99!</h2>

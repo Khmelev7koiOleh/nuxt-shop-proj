@@ -71,14 +71,15 @@ onMounted(async () => {
   <div class="max-w-[90%] mx-auto flex flex-col gap-4">
     <div v-for="order in data" :key="order.$id" class="basis-1/4">
       <div
-        class="w-full h-full min-h-[90px] flex flex-wrap items-center justify-around gap-8 border border-gray-300 rounded-3xl bg-black py-4 hover:bg-gray-900"
+        class="w-full h-full min-h-[90px] flex items-center justify-between md:gap-8 border border-gray-300 rounded-xl bg-black py-4 px-4 md:px-12 hover:bg-gray-900"
       >
         <img :src="order.image" width="50" alt="Meal image" />
-        <div class="text-white">
-          <p>Name: {{ order.name }}</p>
+        <div
+          class="text-white w-1/2 md:w-1/2 flex justify-around items-center gap-4"
+        >
+          <p class="text-gray-100">{{ order.name }}</p>
+          <p class="text-gray-100">{{ order.price }}</p>
         </div>
-
-        <p class="text-gray-100">Price: {{ order.price }}</p>
       </div>
     </div>
 

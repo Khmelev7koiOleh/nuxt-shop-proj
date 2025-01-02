@@ -186,33 +186,9 @@ onMounted(() => {
   console.log(carts);
   console.log(favorites);
 });
-
-// watch(
-//   () => carts,
-//   async () => {
-//     await setTimeout(() => {
-//       getIsCart();
-//       getIsFavorite();
-//     }, 1500);
-//     console.log(carts);
-//   }
-// );
-// const setTimeoutFunction = async () => {
-//   await setTimeout(() => {
-//     getIsCart();
-//   }, 1500);
-// };
 </script>
 
 <template>
-  <!-- <div class="p-4 bg-slate-500 mb-20 flex flex-col gap-2 w-1/2">
-    <input type="text" v-model="nameRef" placeholder="Title" />
-    <input type="number" v-model="priceRef" placeholder="Price" />
-    <input type="file" @change="handleFileChange" />
-    <button @click="onSubmit" type="submit">Submit</button>
-    <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
-  </div> -->
-
   <div class="text-3xl test-light text-gray-800 p-10 text-center">
     Favorites
   </div>
@@ -221,23 +197,18 @@ onMounted(() => {
     <div
       v-for="favorite in data"
       :key="favorite.$id"
-      class="basis-1/4"
+      class="basis-1/2 md:basis-1/4"
       :wrap-around="true"
     >
       <NuxtLink
         :href="`/edit/${favorite.mealId}`"
         v-if="favorite.user === cDStore.user.email"
-        class="max-w-[95%] h-full flex flex-col items-center justify-between bg-gray-900 text-gray-100 rounded-3xl py-4 border border-white relative"
+        class="max-w-[95%] h-full max-h-[40vh] min-h-[40vh] md:max-h-[55vh] md:min-h-[40vh] flex flex-col items-center justify-between bg-gray-900 text-gray-100 rounded-3xl py-4 border border-white relative"
       >
-        <div class="w-full flex flex-col items-center">
-          <p class="text-xl">{{ favorite.name }}</p>
-        </div>
-        <img :src="favorite.image" alt="Meal image" />
-        <p class="text-xl">Price:{{ favorite.price }}</p>
-        <div class="flex gap-4 p-2 absolute top-2 left-2">
+        <div class="w-full flex gap-4 p-2 absolute top-2 left-2">
           <button @click.prevent="toggleFavoriteMutation.mutate(favorite)">
             <div
-              class="flex items-center justify-center cursor-pointer border border-red-400 text-red-400 p-2 rounded-full"
+              class="flex items-center justify-center cursor-pointer border border-red-400 text-red-400 p-1.5 rounded-full absolute top-0 left-0 md:top-2 md:left-2"
             >
               <Icon
                 @click.prevent="deleteFavorite(favorite.$id)"
@@ -247,6 +218,11 @@ onMounted(() => {
             </div>
           </button>
         </div>
+        <div class="w-full flex flex-col items-center">
+          <p class="text-xl mt-4 text-center wrap-text">{{ favorite.name }}</p>
+        </div>
+        <img :src="favorite.image" alt="Meal image" class="max-w-[100%]" />
+        <p class="text-xl">Price:{{ favorite.price }}</p>
       </NuxtLink>
     </div>
   </div>
@@ -255,5 +231,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Add your styles here */
+.wrap-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  word-break: normal;
+  width: 100%;
+}
 </style>

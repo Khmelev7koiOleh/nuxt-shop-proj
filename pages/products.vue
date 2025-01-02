@@ -108,40 +108,6 @@ const ifAdmin = async () => {
   }
 };
 
-// Fetch items from DB
-// const getItems = async () => {
-//   try {
-//     const response = await DB.listDocuments(DB_ID, COLLECTION_MEALS);
-//     if (response.documents.length === 0) {
-//       errorMessage.value = "No products available.";
-//     } else {
-//       orders.value = response.documents.map((document) => ({
-//         $id: document.$id,
-//         name: document.name,
-//         price: document.price,
-//         $createdAt: document.$createdAt,
-//         image: document.image,
-//         category: document.category,
-//       })) as IMeals[];
-
-//       orders.value.sort((a, b) => {
-//         const dateA = new Date(a.$createdAt);
-//         const dateB = new Date(b.$createdAt);
-//         return dateB.getTime() - dateA.getTime();
-//       });
-
-//       // Initialize filteredOrders with all items
-//       filteredOrders.value = [...orders.value];
-//     }
-//   } catch (error) {
-//     console.error("Error fetching products:", error);
-//     errorMessage.value = "An error occurred while fetching products.";
-//   } finally {
-//     isLoading.value = false;
-//   }
-// };
-
-// Watch `data` and initialize `filteredOrders`
 watch(
   () => data?.value,
   (newData) => {
@@ -166,18 +132,6 @@ const handleFileChange = (event: Event) => {
   }
 };
 
-// Form reset
-// const resetForm = () => {
-//   nameRef.value = "";
-//   fileRef.value = null;
-//   priceRef.value = 0;
-//   descriptionRef.value = "";
-//   selectedCategory.value = "";
-//   isLoading.value = false;
-//   errorMessage.value = null;
-// };
-
-// Upload image
 const uploadImage = async () => {
   if (!fileRef.value) {
     errorMessage.value = "No file selected.";
@@ -193,35 +147,6 @@ const uploadImage = async () => {
     return null;
   }
 };
-
-// Use form with validation
-
-// const mutation = useMutation({
-//   mutationKey: ["meals", nameRef.value],
-//   mutationFn: async () => {
-//     const uploadedFile = await uploadImage();
-//     if (!uploadedFile) throw new Error("File upload failed.");
-
-//     const imageURL = storage.getFileView(STORAGE_ID, uploadedFile.$id);
-//     return DB.createDocument(DB_ID, COLLECTION_MEALS, uuid(), {
-//       name: nameRef.value,
-//       price: priceRef.value,
-//       image: imageURL,
-//       description: descriptionRef.value,
-//       category: selectedCategory.value,
-//       $createdAt: new Date().toISOString(),
-//     });
-//   },
-//   onSuccess: () => {
-//     console.log("Meal created successfully.");
-//     resetForm();
-//     // getItems(); // Refresh meals
-//   },
-//   onError: (error) => {
-//     console.error("Error creating meal:", error);
-//     errorMessage.value = "Meal creation failed.";
-//   },
-// });
 
 // Form submission
 const onSubmit = () => {
@@ -260,14 +185,17 @@ onMounted(async () => {
 
 <template>
   <div class="text-2xl test-light text-gray-800 p-10">All products</div>
-  <div v-if="isAdmin" class="flex flex-col justify-center items-center gap-8">
+  <div
+    v-if="isAdmin"
+    class="w-full flex flex-col justify-center items-center gap-8"
+  >
     <div @click="onOpen = !onOpen" class="cursor-pointer">
       <Icon :name="onOpen ? 'uiw:close' : 'uiw:plus'" class="w-8 h-8" />
     </div>
 
     <div
       v-if="onOpen"
-      class="p-4 bg-black mb-20 flex flex-col justify-center gap-6 w-1/3 rounded-2xl placeholder:text-white"
+      class="p-4 bg-black mb-20 flex flex-col justify-center gap-6 md:w-1/3 w-[90%] rounded-2xl placeholder:text-white"
     >
       <input
         class="bg-transparent border-b border-b-white text-white outline-none"
@@ -320,14 +248,14 @@ onMounted(async () => {
     <UiCard
       v-for="meal in filteredOrders"
       :key="meal.$id"
-      class="basis-1/4"
+      class="basis-1/2 md:basis-1/4"
       :wrap-around="true"
     >
       <NuxtLink
         :href="`/edit/${meal.$id}`"
-        class="max-w-[95%] h-full flex flex-col justify-between items-center gap-2 border border-gray-300 rounded-3xl bg-black py-4 relative"
+        class="max-w-[42vw] h-full flex flex-col justify-between items-center gap-2 border border-gray-300 rounded-3xl bg-black py-4 relative"
       >
-        <div v-if="isAdmin" class="absolute top-4 left-4">
+        <div v-if="isAdmin" class="absolute top-2 right-2">
           <button
             @click.prevent="deleteOrder(meal.$id)"
             class="bg-red-500 text-white p-1 flex items-center justify-center rounded-full"
@@ -335,10 +263,24 @@ onMounted(async () => {
             <Icon :name="'ph:trash'" class="w-5 h-5 text-bold" />
           </button>
         </div>
-        <div class="w-full h-full flex flex-col justify-between items-center">
-          <p class="text-gray-100 text-2xl">{{ meal.name }}</p>
-          <img :src="meal.image" alt="Order image" />
-          <p class="text-gray-100 text-xl border-b w-full flex justify-center">
+
+        <div
+          class="w-full max-h-[30vh] min-h-[30vh] md:max-h-[45vh] md:min-h-[45vh] flex flex-col justify-between items-center"
+        >
+          <!-- Text that breaks into two rows if needed -->
+          <p
+            class="text-gray-100 text-md md:text-2xl w-full flex justify-center break-words text-center wrap-text"
+          >
+            {{ meal.name }}
+          </p>
+          <img
+            :src="meal.image"
+            alt="Order image"
+            class="max-h-[20vh] md:max-h-[35vh] md:min-h-[25vh] object-cover md:object-cover-none"
+          />
+          <p
+            class="text-gray-100 text-xl border-b w-full flex justify-center wrap-text"
+          >
             Price:{{ meal.price }}
           </p>
         </div>
@@ -372,3 +314,13 @@ onMounted(async () => {
     </UiCard>
   </div>
 </template>
+
+<style scoped>
+.wrap-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  word-break: normal;
+  width: 100%;
+}
+</style>

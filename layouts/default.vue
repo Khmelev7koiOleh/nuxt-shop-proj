@@ -149,8 +149,8 @@ const initializeData = async () => {
 const marginClass = computed(() => {
   if (!store.isAuth) return "ml-0";
   return sidebarStore.onSidebarOpen
-    ? "ml-[200px] duration-700"
-    : "ml-[80px] duration-700";
+    ? "ml-[0px] duration-700"
+    : "md:ml-[80px] ml-[40px] duration-700";
 });
 // Watch for authentication changes
 watch(
@@ -176,7 +176,7 @@ onMounted(async () => {
     <!-- Sidebar for authenticated users -->
     <aside
       v-if="store.isAuth"
-      class="md:block fixed top-0 left-0 z-10 w-[40px] md:w-[200px] bg-gray-200 h-full flex items-center justify-center duration-700"
+      class="md:block fixed top-0 left-0 z-50 w-[40px] md:w-[200px] bg-gray-200 h-screen flex items-center justify-center duration-700"
       :class="[sidebarStore.onSidebarOpen ? 'w-full' : 'w-[40px] md:w-[80px]']"
     >
       <LayoutSidebar />

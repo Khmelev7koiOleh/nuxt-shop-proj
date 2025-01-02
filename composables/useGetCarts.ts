@@ -17,6 +17,13 @@ export function useGetCarts() {
       const filteredCarts = carts.filter(
         (document) => document.user === cDStore.user.email
       );
+
+      // Sort the filtered carts by date
+      filteredCarts.sort((a, b) => {
+        const dateA = new Date(a.$createdAt);
+        const dateB = new Date(b.$createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
       return filteredCarts as IMeals[];
     },
     refetchOnWindowFocus: true, // Refetch data when the window is focused
