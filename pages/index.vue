@@ -154,221 +154,223 @@ updateRandomImages();
 </script>
 
 <template>
-  <NuxtLink to="/products" class="w-full">
+  <NuxtLink to="/products" class="w-full h-full">
     <div
       :class="
         onValueChange
-          ? 'transition-all -translate-y-[300px] md:translate-x-[1400px] opacity-0 duration-1000'
+          ? 'transition-all -translate-y-[300px]  md:-translate-y-[400px] opacity-0 duration-1000'
           : 'transition-all translate-y-[0px] md:translate-x-[0px] opacity-100 duration-1000'
       "
-      class="justify-around flex fixed"
+      class="justify-around flex absolute"
     >
       <img
-        class="min-w-[100%] min-h-[55vh] md:max-h-[75vh] mx-auto md:flex object-cover"
+        class="min-w-[95vw] min-h-[50vh] md:max-h-[80vh] mx-auto md:flex md:justify-center object-cover"
         :src="randomImage"
       />
     </div>
     <div
       :class="
         !onValueChange
-          ? 'transition-all -translate-y-[300px] md:translate-x-[1400px] opacity-0 duration-1000'
-          : 'transition-all translate-y-[0px] md:translate-x-[0px] opacity-100 duration-1000'
+          ? 'transition-all -translate-y-[300px] md:-translate-y-[400px] opacity-0 duration-1000'
+          : 'transition-all translate-y-[0px] md:translate-y-[0px] opacity-100 duration-1000'
       "
-      class="justify-around flex"
+      class="justify-around flex absolute"
     >
       <img
-        class="min-w-[100%] min-h-[55vh] md:max-h-[75vh] mx-auto md:flex object-cover"
+        class="min-w-[95vw] min-h-[50vh] md:max-h-[80vh] mx-auto md:flex object-cover"
         :src="randomImageTwo"
       />
     </div>
   </NuxtLink>
-  <div class="text-2xl test-light text-red-500 p-10">Newest</div>
+  <div class="py-[50vh] md:py-[80vh]">
+    <div class="text-2xl test-light text-red-500 p-10">Newest</div>
 
-  <div v-if="!data" class="w-[95vw] flex justify-center items-center">
-    <div class="text-red-500">{{ errorMessage }}</div>
-  </div>
+    <div v-if="!data" class="w-[95vw] flex justify-center items-center">
+      <div class="text-red-500">{{ errorMessage }}</div>
+    </div>
 
-  <div class="relative max-w-[90vw] mx-auto">
-    <Carousel>
-      <div class="absolute -top-10 right-20 text-black">
-        <CarouselPrevious class="bg-black text-gray-100" />
-        <CarouselNext class="bg-black text-gray-100" />
-      </div>
-      <CarouselContent class="max-w-[100vw]">
-        <CarouselItem
-          v-for="meal in newest"
-          :key="meal.$id"
-          class="w-full basis-1/2 md:basis-1/5"
-          :wrap-around="true"
-        >
-          <NuxtLink
-            :to="`/edit/${meal.$id}`"
-            class="w-full h-full flex flex-col border items-center justify-between rounded-3xl py-2 bg-gray-900 text-gray-100"
+    <div class="relative max-w-[90vw] mx-auto">
+      <Carousel>
+        <div class="absolute -top-10 right-20 text-black">
+          <CarouselPrevious class="bg-black text-gray-100" />
+          <CarouselNext class="bg-black text-gray-100" />
+        </div>
+        <CarouselContent class="max-w-[100vw]">
+          <CarouselItem
+            v-for="meal in newest"
+            :key="meal.$id"
+            class="w-full basis-1/2 md:basis-1/5"
+            :wrap-around="true"
           >
-            <div
-              class="w-[95%] h-full flex flex-col items-center justify-between"
+            <NuxtLink
+              :to="`/edit/${meal.$id}`"
+              class="w-full h-full flex flex-col border items-center justify-between rounded-3xl py-2 bg-gray-900 text-gray-100"
             >
-              <p class="text-2xl font-mono">{{ meal.name }}</p>
-
-              <img :src="meal.image" alt="Meal image" />
-              <p class="py-2 text-xl">Price:{{ meal.price }}</p>
-            </div>
-            <div class="flex flex-wrap gap-4">
-              <button
-                @click.prevent="toggleFavoriteMutation.mutate(meal)"
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+              <div
+                class="w-[95%] h-full flex flex-col items-center justify-between"
               >
-                <Icon
-                  :name="
-                    checkIsFavorite(meal.$id)
-                      ? 'radix-icons:heart-filled'
-                      : 'radix-icons:heart'
-                  "
-                  class="w-5 h-5 text-bold"
-                />
-              </button>
+                <p class="text-2xl font-mono">{{ meal.name }}</p>
 
-              <button
-                @click.prevent="toggleCartMutation.mutate(meal)"
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                <img :src="meal.image" alt="Meal image" />
+                <p class="py-2 text-xl">Price:{{ meal.price }}</p>
+              </div>
+              <div class="flex flex-wrap gap-4">
+                <button
+                  @click.prevent="toggleFavoriteMutation.mutate(meal)"
+                  class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                >
+                  <Icon
+                    :name="
+                      checkIsFavorite(meal.$id)
+                        ? 'radix-icons:heart-filled'
+                        : 'radix-icons:heart'
+                    "
+                    class="w-5 h-5 text-bold"
+                  />
+                </button>
+
+                <button
+                  @click.prevent="toggleCartMutation.mutate(meal)"
+                  class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                >
+                  <Icon
+                    :name="
+                      checkIsCart(meal.$id) ? 'ion:cart' : 'ion:cart-outline'
+                    "
+                    class="w-5 h-5 text-bold"
+                  />
+                </button>
+              </div>
+            </NuxtLink>
+          </CarouselItem>
+        </CarouselContent>
+      </Carousel>
+    </div>
+
+    <div class="py-20">
+      <div class="text-2xl test-light text-gray-800 p-10">What is new?</div>
+      <NuxtLink to="/products" class="w-full">
+        <div class="basis-1/3 flex max-w-[100%]">
+          <img class="max-w-[33vw] mx-auto md:flex hidden" :src="randomImage" />
+
+          <img
+            class="max-w-[90vw] md:max-w-[29vw] mx-auto md:flex"
+            :src="randomImageTwo"
+          />
+
+          <img
+            class="max-w-[33vw] mx-auto md:flex hidden"
+            :src="randomImageThree"
+          />
+        </div>
+      </NuxtLink>
+    </div>
+    <div class="text-2xl test-light text-gray-800 p-10">Best for you</div>
+    <div class="relative max-w-[90vw] mx-auto">
+      <Carousel>
+        <div class="absolute -top-10 right-20 text-black">
+          <CarouselPrevious class="bg-black text-gray-100" />
+          <CarouselNext class="bg-black text-gray-100" />
+        </div>
+        <CarouselContent class="max-w-[95vw]">
+          <CarouselItem
+            v-for="meal in data"
+            :key="meal.$id"
+            class="basis-1/2 md:basis-1/5"
+            :wrap-around="true"
+          >
+            <NuxtLink
+              :to="`/edit/${meal.$id}`"
+              class="w-full h-full flex flex-col border items-center justify-between rounded-3xl py-2 bg-gray-900 text-gray-100"
+            >
+              <div
+                class="w-[95%] h-full flex flex-col items-center justify-between"
               >
-                <Icon
-                  :name="
-                    checkIsCart(meal.$id) ? 'ion:cart' : 'ion:cart-outline'
-                  "
-                  class="w-5 h-5 text-bold"
-                />
-              </button>
-            </div>
-          </NuxtLink>
-        </CarouselItem>
-      </CarouselContent>
-    </Carousel>
-  </div>
+                <p class="text-2xl font-mono">{{ meal.name }}</p>
 
-  <div class="py-20">
-    <div class="text-2xl test-light text-gray-800 p-10">What is new?</div>
-    <NuxtLink to="/products" class="w-full">
-      <div class="basis-1/3 flex max-w-[100%]">
-        <img class="max-w-[33vw] mx-auto md:flex hidden" :src="randomImage" />
+                <img :src="meal.image" alt="Meal image" />
+                <p class="py-2 text-xl">Price:{{ meal.price }}</p>
+              </div>
+              <div class="flex flex-wrap gap-4">
+                <button
+                  @click.prevent="toggleFavoriteMutation.mutate(meal)"
+                  class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                >
+                  <Icon
+                    :name="
+                      checkIsFavorite(meal.$id)
+                        ? 'radix-icons:heart-filled'
+                        : 'radix-icons:heart'
+                    "
+                    class="w-5 h-5 text-bold"
+                  />
+                </button>
 
-        <img
-          class="max-w-[90vw] md:max-w-[29vw] mx-auto md:flex"
-          :src="randomImageTwo"
-        />
+                <button
+                  @click.prevent="toggleCartMutation.mutate(meal)"
+                  class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
+                >
+                  <Icon
+                    :name="
+                      checkIsCart(meal.$id) ? 'ion:cart' : 'ion:cart-outline'
+                    "
+                    class="w-5 h-5 text-bold"
+                  />
+                </button>
+              </div>
+            </NuxtLink>
+          </CarouselItem>
+        </CarouselContent>
+      </Carousel>
+    </div>
+    <div class="p-20"></div>
+    <NuxtLink
+      to="/products"
+      class="w-[90%] h-auto md:flex md:flex-nowrap flex flex-wrap justify-between gap-12 mx-auto"
+    >
+      <div class="flex flex-col gap-4">
+        <img src="../public/allFrom4.99.jpg" alt="" />
+        <h2 class="text-2xl font-bold">All this from €4.99!</h2>
+        <div class="text-md">
+          Discover our new McSmart menus now! For example, with a double
+          cheeseburger, medium fries and a drink for just €4.99*.
+        </div>
+        <div>
+          <button
+            class="text-bold bg-green-800 px-2 py-1 rounded-md text-white hover:bg-green-700"
+          >
+            Go to menu
+          </button>
+        </div>
+      </div>
 
-        <img
-          class="max-w-[33vw] mx-auto md:flex hidden"
-          :src="randomImageThree"
-        />
+      <div class="flex flex-col gap-4">
+        <img src="../public/plantBurger.jpg" alt="" />
+        <h2 class="text-2xl font-bold">Plantastischer Geschmack</h2>
+        <div class="text-md">
+          Try our McPlant® with plant-based Beyond Meat Patty and the McPlant®
+          Nuggets now. For a limited time only: the fruity and exotic McPlant®
+          Mango Chili and the smoky and spicy McPlant® Tomato Chargrill!
+        </div>
+        <div>
+          <button
+            class="text-bold bg-green-800 px-2 py-1 rounded-md text-white hover:bg-green-700"
+          >
+            Go to menu
+          </button>
+        </div>
       </div>
     </NuxtLink>
-  </div>
-  <div class="text-2xl test-light text-gray-800 p-10">Best for you</div>
-  <div class="relative max-w-[90vw] mx-auto">
-    <Carousel>
-      <div class="absolute -top-10 right-20 text-black">
-        <CarouselPrevious class="bg-black text-gray-100" />
-        <CarouselNext class="bg-black text-gray-100" />
-      </div>
-      <CarouselContent class="max-w-[95vw]">
-        <CarouselItem
-          v-for="meal in data"
-          :key="meal.$id"
-          class="basis-1/2 md:basis-1/5"
-          :wrap-around="true"
-        >
-          <NuxtLink
-            :to="`/edit/${meal.$id}`"
-            class="w-full h-full flex flex-col border items-center justify-between rounded-3xl py-2 bg-gray-900 text-gray-100"
-          >
-            <div
-              class="w-[95%] h-full flex flex-col items-center justify-between"
-            >
-              <p class="text-2xl font-mono">{{ meal.name }}</p>
-
-              <img :src="meal.image" alt="Meal image" />
-              <p class="py-2 text-xl">Price:{{ meal.price }}</p>
-            </div>
-            <div class="flex flex-wrap gap-4">
-              <button
-                @click.prevent="toggleFavoriteMutation.mutate(meal)"
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-              >
-                <Icon
-                  :name="
-                    checkIsFavorite(meal.$id)
-                      ? 'radix-icons:heart-filled'
-                      : 'radix-icons:heart'
-                  "
-                  class="w-5 h-5 text-bold"
-                />
-              </button>
-
-              <button
-                @click.prevent="toggleCartMutation.mutate(meal)"
-                class="flex items-center justify-center cursor-pointer border border-gray-400 p-2 rounded-full"
-              >
-                <Icon
-                  :name="
-                    checkIsCart(meal.$id) ? 'ion:cart' : 'ion:cart-outline'
-                  "
-                  class="w-5 h-5 text-bold"
-                />
-              </button>
-            </div>
-          </NuxtLink>
-        </CarouselItem>
-      </CarouselContent>
-    </Carousel>
-  </div>
-  <div class="p-20"></div>
-  <NuxtLink
-    to="/products"
-    class="w-[90%] h-auto md:flex md:flex-nowrap flex flex-wrap justify-between gap-12 mx-auto"
-  >
-    <div class="flex flex-col gap-4">
-      <img src="../public/allFrom4.99.jpg" alt="" />
-      <h2 class="text-2xl font-bold">All this from €4.99!</h2>
-      <div class="text-md">
-        Discover our new McSmart menus now! For example, with a double
-        cheeseburger, medium fries and a drink for just €4.99*.
-      </div>
-      <div>
-        <button
-          class="text-bold bg-green-800 px-2 py-1 rounded-md text-white hover:bg-green-700"
-        >
-          Go to menu
-        </button>
-      </div>
+    <div class="p-20"></div>
+    <div
+      @click="swipeToTop"
+      class="py-10 bg-black w-full flex flex-col justify-center items-center"
+    >
+      <Icon
+        :name="'radix-icons:arrow-up'"
+        class="w-10 h-10 text-bold text-white"
+      />
     </div>
-
-    <div class="flex flex-col gap-4">
-      <img src="../public/plantBurger.jpg" alt="" />
-      <h2 class="text-2xl font-bold">Plantastischer Geschmack</h2>
-      <div class="text-md">
-        Try our McPlant® with plant-based Beyond Meat Patty and the McPlant®
-        Nuggets now. For a limited time only: the fruity and exotic McPlant®
-        Mango Chili and the smoky and spicy McPlant® Tomato Chargrill!
-      </div>
-      <div>
-        <button
-          class="text-bold bg-green-800 px-2 py-1 rounded-md text-white hover:bg-green-700"
-        >
-          Go to menu
-        </button>
-      </div>
-    </div>
-  </NuxtLink>
-  <div class="p-20"></div>
-  <div
-    @click="swipeToTop"
-    class="py-10 bg-black w-full flex flex-col justify-center items-center"
-  >
-    <Icon
-      :name="'radix-icons:arrow-up'"
-      class="w-10 h-10 text-bold text-white"
-    />
   </div>
 </template>
 
