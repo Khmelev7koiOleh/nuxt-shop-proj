@@ -105,9 +105,7 @@ onMounted(async () => {
               {{ meal.name }}
             </h2>
           </div>
-          <h2 class="text-sm text-center font-light text-format">
-            {{ meal.description }}
-          </h2>
+
           <div>
             <h2
               class="md:text-xl text-md font-light text-center border-b border rounded-md bg-green-900 px-2 py-1 text-gray-100"
