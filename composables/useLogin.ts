@@ -56,7 +56,7 @@ export function useLogin() {
       router.push("/"); // Redirect to the home page after successful login
       setTimeout(() => {
         window.location.reload();
-      }, 10);
+      }, 1000);
     },
     onError(error) {
       console.error("Login error:", error);
