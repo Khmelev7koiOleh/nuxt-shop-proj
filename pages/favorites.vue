@@ -203,7 +203,7 @@ onMounted(() => {
       <NuxtLink
         :href="`/edit/${favorite.mealId}`"
         v-if="favorite.user === cDStore.user.email"
-        class="max-w-[95%] h-full max-h-[40vh] min-h-[40vh] md:max-h-[55vh] md:min-h-[40vh] flex flex-col items-center justify-between bg-gray-900 text-gray-100 rounded-3xl py-4 border border-white relative"
+        class="max-w-[95%] h-fullmax-h-[40vh] min-h-[40vh] md:max-h-[55vh] md:min-h-[55vh] flex flex-col items-center justify-between bg-gray-900 text-gray-100 rounded-3xl py-4 border border-white relative"
       >
         <div class="w-full flex gap-4 p-2 absolute top-2 left-2">
           <button @click.prevent="toggleFavoriteMutation.mutate(favorite)">
